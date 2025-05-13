@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
-import pollRoutes from './routes/pollRoutes';
+import pollRoutes, { setSocketIo } from './routes/pollRoutes';
 import { connectDB } from './config/db';
 
 const app = express();
@@ -14,6 +14,9 @@ const io = new Server(httpServer, {
   }
 });
 const PORT = process.env.PORT || 3000;
+
+// Set the Socket.IO instance for routes
+setSocketIo(io);
 
 // Middleware
 app.use(cors());

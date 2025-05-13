@@ -4,8 +4,8 @@
   font-weight: 400;
 
   color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+  color: #f3f4f6;
+  background-color: #1a1e2c;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -15,24 +15,28 @@
 
 a {
   font-weight: 500;
-  color: #646cff;
+  color: #60a5fa;
   text-decoration: inherit;
 }
 a:hover {
-  color: #535bf2;
+  color: #93c5fd;
 }
 
 body {
   margin: 0;
   display: flex;
-  place-items: center;
   min-width: 320px;
   min-height: 100vh;
 }
 
 h1 {
-  font-size: 3.2em;
+  font-size: 2.8em;
   line-height: 1.1;
+  color: #fff;
+}
+
+h2, h3 {
+  color: #fff;
 }
 
 button {
@@ -42,38 +46,53 @@ button {
   font-size: 1em;
   font-weight: 500;
   font-family: inherit;
-  background-color: #1a1a1a;
+  background-color: #2d3748;
   cursor: pointer;
-  transition: border-color 0.25s;
+  transition: all 0.25s ease;
 }
 button:hover {
-  border-color: #646cff;
+  border-color: #60a5fa;
+  background-color: #374151;
 }
 button:focus,
 button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+  outline: 2px solid #60a5fa;
 }
 
 .card {
   padding: 2em;
+  background-color: #2d3748;
+  border-radius: 8px;
 }
 
 #app {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  text-align: left;
 }
 
 @media (prefers-color-scheme: light) {
   :root {
-    color: #213547;
-    background-color: #ffffff;
+    color: #334155;
+    background-color: #f8fafc;
   }
   a:hover {
-    color: #747bff;
+    color: #1e40af;
+  }
+  a {
+    color: #3b82f6;
+  }
+  h1, h2, h3 {
+    color: #1e293b;
   }
   button {
-    background-color: #f9f9f9;
+    background-color: #e2e8f0;
+  }
+  button:hover {
+    background-color: #cbd5e1;
+  }
+  .card {
+    background-color: #f1f5f9;
   }
 }

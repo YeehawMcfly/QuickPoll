@@ -1,11 +1,27 @@
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
+  /* Modern color palette */
+  --primary: #4f46e5;
+  --primary-light: #818cf8;
+  --primary-dark: #3730a3;
+  --secondary: #ec4899;
+  --accent: #06b6d4;
+  --background: #0f172a;
+  --surface: #1e293b;
+  --text: #f8fafc;
+  --text-secondary: #94a3b8;
+  --success: #10b981;
+  --error: #ef4444;
+  --warning: #f59e0b;
+  
+  /* Typography */
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  line-height: 1.6;
   font-weight: 400;
 
+  /* Theme */
   color-scheme: light dark;
-  color: #f3f4f6;
-  background-color: #1a1e2c;
+  color: var(--text);
+  background-color: var(--background);
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -13,13 +29,17 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
 a {
   font-weight: 500;
-  color: #60a5fa;
+  color: var(--primary-light);
   text-decoration: inherit;
+  transition: all 0.2s ease;
 }
+
 a:hover {
-  color: #93c5fd;
+  color: var(--primary);
 }
 
 body {
@@ -27,16 +47,22 @@ body {
   display: flex;
   min-width: 320px;
   min-height: 100vh;
+  background: linear-gradient(180deg, var(--background) 0%, rgba(22, 30, 46, 1) 100%);
 }
 
 h1 {
   font-size: 2.8em;
   line-height: 1.1;
   color: #fff;
+  margin-bottom: 0.5rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
 }
 
 h2, h3 {
   color: #fff;
+  letter-spacing: -0.025em;
+  font-weight: 600;
 }
 
 button {
@@ -46,23 +72,33 @@ button {
   font-size: 1em;
   font-weight: 500;
   font-family: inherit;
-  background-color: #2d3748;
+  background-color: var(--surface);
   cursor: pointer;
   transition: all 0.25s ease;
 }
+
 button:hover {
-  border-color: #60a5fa;
-  background-color: #374151;
+  border-color: var(--primary-light);
+  background-color: var(--primary-dark);
 }
+
 button:focus,
 button:focus-visible {
-  outline: 2px solid #60a5fa;
+  outline: 2px solid var(--primary-light);
 }
 
 .card {
   padding: 2em;
-  background-color: #2d3748;
-  border-radius: 8px;
+  background-color: var(--surface);
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.card:hover {
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
 }
 
 #app {
@@ -72,27 +108,75 @@ button:focus-visible {
   text-align: left;
 }
 
+/* Modern scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.4);
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* Light mode */
 @media (prefers-color-scheme: light) {
   :root {
-    color: #334155;
-    background-color: #f8fafc;
+    --background: #f8fafc;
+    --surface: #ffffff;
+    --text: #0f172a;
+    --text-secondary: #64748b;
   }
-  a:hover {
-    color: #1e40af;
+
+  body {
+    background: linear-gradient(180deg, #f8fafc 0%, #e2e8f0 100%);
   }
-  a {
-    color: #3b82f6;
-  }
+
   h1, h2, h3 {
-    color: #1e293b;
+    color: var(--text);
   }
+
   button {
     background-color: #e2e8f0;
   }
+
   button:hover {
     background-color: #cbd5e1;
   }
+
   .card {
-    background-color: #f1f5f9;
+    background-color: var(--surface);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+  }
+
+  ::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.05);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.2);
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.3);
   }
 }

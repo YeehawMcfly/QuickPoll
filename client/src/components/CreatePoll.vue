@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
+import { useAuth } from '../store/auth';
 
 const question = ref('');
 const options = ref(['', '']);
@@ -8,6 +9,14 @@ const error = ref<string | null>(null);
 const loading = ref(false);
 
 const router = useRouter();
+const auth = useAuth();
+
+onMounted(() => {
+  // Redirect to login if not authenticated
+  if (!auth.isAuthenticated.value) {
+    router.push('/login');
+  }
+});
 
 const addOption = () => {
   options.value.push('');
@@ -20,6 +29,11 @@ const removeOption = (index: number) => {
 };
 
 const createPoll = async () => {
+  if (!auth.isAuthenticated.value) {
+    error.value = 'You must be logged in to create a poll';
+    return;
+  }
+
   if (question.value.trim() === '') {
     error.value = 'Question cannot be empty';
     return;
@@ -35,10 +49,13 @@ const createPoll = async () => {
   error.value = null;
   
   try {
+    const token = auth.getToken();
+    
     const response = await fetch('http://localhost:3000/api/polls', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`, // Add the token
       },
       body: JSON.stringify({
         question: question.value,
@@ -122,116 +139,136 @@ const createPoll = async () => {
 }
 
 .poll-form {
-  background-color: #2d3748;
-  border-radius: 8px;
+  background-color: #1e293b;
+  border-radius: 12px;
   padding: 2rem;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .form-group, .option-group {
-  margin-bottom: 1rem;
+  margin-bottom: 1.25rem;
 }
 
 label {
   display: block;
-  margin-bottom: 0.5rem;
-  color: #f3f4f6;
+  margin-bottom: 0.6rem;
+  color: #f1f5f9;
+  font-weight: 500;
 }
 
 input {
   width: 100%;
   padding: 0.8rem;
-  border-radius: 4px;
-  border: 1px solid #4b5563;
-  background-color: #1f2937;
+  border-radius: 8px;
+  border: 1px solid #475569;
+  background-color: #334155;
   color: white;
   font-size: 1rem;
+  box-sizing: border-box;
+  transition: all 0.2s ease;
 }
 
 input:focus {
-  border-color: #3b82f6;
+  border-color: #818cf8;
   outline: none;
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+  box-shadow: 0 0 0 2px rgba(129, 140, 248, 0.3);
 }
 
 .option-group {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.6rem;
 }
 
 .remove-btn {
   background-color: #ef4444;
   color: white;
   border: none;
-  border-radius: 4px;
+  border-radius: 8px;
   padding: 0 0.7rem;
   cursor: pointer;
   transition: background-color 0.2s;
+  box-shadow: 0 2px 4px rgba(239, 68, 68, 0.2);
 }
 
 .remove-btn:hover {
   background-color: #dc2626;
+  transform: translateY(-2px);
 }
 
 .add-option {
-  background-color: #10b981;
+  background: linear-gradient(90deg, #10b981 0%, #34d399 100%);
   color: white;
   border: none;
-  border-radius: 4px;
-  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  padding: 0.6rem 1rem;
   cursor: pointer;
-  margin-top: 0.5rem;
-  transition: background-color 0.2s;
+  margin-top: 0.8rem;
+  transition: all 0.3s ease;
+  font-weight: 500;
+  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
+  display: inline-flex;
+  align-items: center;
 }
 
 .add-option:hover {
-  background-color: #059669;
+  background: linear-gradient(90deg, #059669 0%, #10b981 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
 }
 
 .submit-btn {
-  background-color: #3b82f6;
+  background: linear-gradient(90deg, #6366f1 0%, #818cf8 100%);
   color: white;
   border: none;
-  border-radius: 4px;
-  padding: 0.8rem 1.5rem;
+  border-radius: 8px;
+  padding: 0.9rem 1.5rem;
   font-size: 1rem;
   cursor: pointer;
-  margin-top: 1.5rem;
-  transition: background-color 0.2s;
+  margin-top: 1.8rem;
+  transition: all 0.3s ease;
+  font-weight: 500;
+  box-shadow: 0 4px 6px rgba(99, 102, 241, 0.25);
+  width: 100%;
 }
 
 .submit-btn:hover {
-  background-color: #2563eb;
+  background: linear-gradient(90deg, #4f46e5 0%, #6366f1 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(99, 102, 241, 0.3);
 }
 
 .submit-btn:disabled {
-  background-color: #4b5563;
+  background: #64748b;
   cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
 .error-message {
-  color: #ef4444;
+  color: #f87171;
   margin-top: 1rem;
   background-color: rgba(239, 68, 68, 0.1);
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
   border-left: 3px solid #ef4444;
 }
 
 @media (prefers-color-scheme: light) {
   .poll-form {
-    background-color: #fff;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    background-color: white;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(0, 0, 0, 0.05);
   }
   
   label {
-    color: #374151;
+    color: #334155;
   }
   
   input {
-    border: 1px solid #d1d5db;
-    background-color: #f9fafb;
-    color: #1f2937;
+    border: 1px solid #cbd5e1;
+    background-color: #f8fafc;
+    color: #334155;
   }
 }
 </style>

@@ -3,6 +3,7 @@ import cors from 'cors';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import pollRoutes, { setSocketIo } from './routes/pollRoutes';
+import authRoutes from './routes/authRoutes';
 import { connectDB } from './config/db';
 
 const app = express();
@@ -24,6 +25,7 @@ app.use(express.json());
 
 // Routes
 app.use('/api/polls', pollRoutes);
+app.use('/api/auth', authRoutes);
 
 // Socket.io
 io.on('connection', (socket) => {

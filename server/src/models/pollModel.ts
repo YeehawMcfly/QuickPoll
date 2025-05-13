@@ -5,6 +5,8 @@ export interface IPoll extends Document {
   options: string[];
   votes: number[];
   createdAt: Date;
+  creator: mongoose.Types.ObjectId;
+  isActive: boolean;
 }
 
 const PollSchema = new mongoose.Schema({
@@ -28,6 +30,15 @@ const PollSchema = new mongoose.Schema({
   createdAt: {
     type: Date,
     default: Date.now
+  },
+  creator: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  isActive: {
+    type: Boolean,
+    default: true
   }
 });
 

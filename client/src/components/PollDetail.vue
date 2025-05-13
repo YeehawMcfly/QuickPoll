@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { io } from 'socket.io-client';
+import { useAuth } from '../store/auth';
 
 interface Poll {
   _id: string;
@@ -12,6 +13,7 @@ interface Poll {
 }
 
 const route = useRoute();
+const router = useRouter();
 const pollId = computed(() => route.params.id as string);
 
 const poll = ref<Poll | null>(null);
@@ -22,6 +24,8 @@ const votingInProgress = ref(false);
 
 const API_URL = 'http://localhost:3000/api';
 const socket = io('http://localhost:3000');
+
+const auth = useAuth();
 
 const totalVotes = computed(() => {
   if (!poll.value) return 0;
@@ -48,6 +52,12 @@ const fetchPoll = async () => {
 
 const submitVote = async () => {
   if (selectedOption.value === null) return;
+  
+  if (!auth.isAuthenticated.value) {
+    error.value = "Please log in to vote on this poll";
+    router.push('/login');
+    return;
+  }
   
   votingInProgress.value = true;
   try {
@@ -96,6 +106,10 @@ onMounted(() => {
       <h1>{{ poll.question }}</h1>
       <p class="date">Created on: {{ new Date(poll.createdAt).toLocaleDateString() }}</p>
       
+      <div v-if="!auth.isAuthenticated.value" class="login-prompt">
+        <p>Please <router-link to="/login">log in</router-link> to vote on this poll.</p>
+      </div>
+
       <form @submit.prevent="submitVote" class="vote-form">
         <div class="options">
           <div 
@@ -129,9 +143,9 @@ onMounted(() => {
         <button 
           type="submit" 
           class="vote-btn" 
-          :disabled="selectedOption === null || votingInProgress"
+          :disabled="selectedOption === null || votingInProgress || !auth.isAuthenticated.value"
         >
-          {{ votingInProgress ? 'Submitting...' : 'Vote' }}
+          {{ votingInProgress ? 'Submitting...' : (auth.isAuthenticated.value ? 'Vote' : 'Login to Vote') }}
         </button>
         
         <div class="vote-summary">
@@ -260,6 +274,14 @@ onMounted(() => {
 
 .error {
   color: #ef4444;
+}
+
+.login-prompt {
+  background-color: rgba(59, 130, 246, 0.1);
+  border-left: 3px solid #3b82f6;
+  padding: 0.75rem 1rem;
+  margin: 1rem 0;
+  color: #3b82f6;
 }
 
 @media (prefers-color-scheme: light) {

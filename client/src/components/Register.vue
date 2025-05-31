@@ -13,6 +13,8 @@ const confirmPassword = ref('');
 const error = ref<string | null>(null);
 const loading = ref(false);
 
+const API_URL = auth.getApiUrl();
+
 const register = async () => {
   if (!username.value || !email.value || !password.value) {
     error.value = 'Please fill out all fields';
@@ -33,7 +35,7 @@ const register = async () => {
   error.value = null;
   
   try {
-    const response = await fetch('http://localhost:3000/api/auth/register', {
+    const response = await fetch(`${API_URL}/api/auth/register`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

@@ -37,7 +37,12 @@ jobs:
       - name: Install dependencies
         run: |
           cd client
-          npm ci
+          # Check if package-lock.json exists and is in sync
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            npm install
+          fi
           
       - name: Build application
         run: |

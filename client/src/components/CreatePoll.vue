@@ -10,6 +10,7 @@ const loading = ref(false);
 
 const router = useRouter();
 const auth = useAuth();
+const API_URL = auth.getApiUrl();
 
 onMounted(() => {
   // Redirect to login if not authenticated
@@ -51,11 +52,11 @@ const createPoll = async () => {
   try {
     const token = auth.getToken();
     
-    const response = await fetch('http://localhost:3000/api/polls', {
+    const response = await fetch(`${API_URL}/api/polls`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`, // Add the token
+        'Authorization': `Bearer ${token}`,
       },
       body: JSON.stringify({
         question: question.value,

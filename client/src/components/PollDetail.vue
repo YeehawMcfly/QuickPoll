@@ -22,10 +22,9 @@ const loading = ref(true);
 const error = ref<string | null>(null);
 const votingInProgress = ref(false);
 
-const API_URL = 'http://localhost:3000/api';
-const socket = io('http://localhost:3000');
-
 const auth = useAuth();
+const API_URL = auth.getApiUrl();
+const socket = io(API_URL);
 
 const totalVotes = computed(() => {
   if (!poll.value) return 0;
@@ -40,7 +39,7 @@ const getPercentage = (votes: number) => {
 const fetchPoll = async () => {
   loading.value = true;
   try {
-    const response = await fetch(`${API_URL}/polls/${pollId.value}`);
+    const response = await fetch(`${API_URL}/api/polls/${pollId.value}`);
     if (!response.ok) throw new Error('Failed to fetch poll');
     poll.value = await response.json();
   } catch (err) {
@@ -61,7 +60,7 @@ const submitVote = async () => {
   
   votingInProgress.value = true;
   try {
-    const response = await fetch(`${API_URL}/polls/${pollId.value}/vote`, {
+    const response = await fetch(`${API_URL}/api/polls/${pollId.value}/vote`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

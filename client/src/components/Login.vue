@@ -11,6 +11,8 @@ const password = ref('');
 const error = ref<string | null>(null);
 const loading = ref(false);
 
+const API_URL = auth.getApiUrl();
+
 const login = async () => {
   if (!email.value || !password.value) {
     error.value = 'Please enter your email and password';
@@ -21,7 +23,7 @@ const login = async () => {
   error.value = null;
   
   try {
-    const response = await fetch('http://localhost:3000/api/auth/login', {
+    const response = await fetch(`${API_URL}/api/auth/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

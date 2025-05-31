@@ -19,7 +19,10 @@ const error = ref<string | null>(null);
 
 const router = useRouter();
 const auth = useAuth();
-const socket = io('http://localhost:3000');
+
+// Use API URL from auth store
+const API_URL = auth.getApiUrl();
+const socket = io(API_URL);
 
 onMounted(async () => {
   if (!auth.isAuthenticated.value) {
@@ -45,7 +48,7 @@ const fetchUserPolls = async () => {
   try {
     const token = auth.getToken();
     
-    const response = await fetch(`http://localhost:3000/api/polls/user/polls`, {
+    const response = await fetch(`${API_URL}/api/polls/user/polls`, {
       headers: {
         'Authorization': `Bearer ${token}`,
       }
@@ -64,7 +67,7 @@ const togglePollStatus = async (poll: Poll) => {
   try {
     const token = auth.getToken();
     
-    const response = await fetch(`http://localhost:3000/api/polls/${poll._id}/status`, {
+    const response = await fetch(`${API_URL}/api/polls/${poll._id}/status`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
@@ -94,7 +97,7 @@ const deletePoll = async (pollId: string) => {
   try {
     const token = auth.getToken();
     
-    const response = await fetch(`http://localhost:3000/api/polls/${pollId}`, {
+    const response = await fetch(`${API_URL}/api/polls/${pollId}`, {
       method: 'DELETE',
       headers: {
         'Authorization': `Bearer ${token}`,

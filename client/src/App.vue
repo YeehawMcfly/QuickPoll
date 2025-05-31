@@ -4,7 +4,7 @@ import { useAuth } from './store/auth';
 import { useRouter } from 'vue-router';
 import PageTransition from './components/PageTransition.vue';
 
-const { isAuthenticated, logout } = useAuth();   // <- destructure
+const { isAuthenticated, logout } = useAuth();
 const router = useRouter();
 const notification = ref('');
 const showNotification = ref(false);
@@ -21,8 +21,6 @@ const onLogout = () => {
   displayNotification('You have been logged out successfully');
   router.push('/');
 };
-
-const navigateToLogin = () => router.push('/login');
 
 onMounted(() => {
   setTimeout(() => {
@@ -84,6 +82,28 @@ onMounted(() => {
 </template>
 
 <style>
+.app-loader {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background: var(--background);
+}
+
+.loader {
+  width: 40px;
+  height: 40px;
+  border: 4px solid rgba(79, 70, 229, 0.2);
+  border-top: 4px solid #4f46e5;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
 body {
   margin: 0;
   min-height: 100vh;

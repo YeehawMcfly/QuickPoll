@@ -98,7 +98,7 @@ const createPoll = async () => {
       <div class="options-container">
         <h3>Options:</h3>
         <div 
-          v-for="(option, index) in options" 
+          v-for="(_, index) in options" 
           :key="index" 
           class="option-group"
         >

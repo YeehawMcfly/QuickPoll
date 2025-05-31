@@ -15,8 +15,11 @@ const routes = [
   { path: '/dashboard', component: Dashboard },
 ];
 
+// Use the same base path as in vite.config.ts
+const base = import.meta.env.PROD ? '/QuickPoll/' : '/';
+
 const router = createRouter({
-  history: createWebHistory(),
+  history: createWebHistory(base),
   routes,
 });
 

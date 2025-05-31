@@ -8,20 +8,33 @@ import { connectDB } from './config/db';
 
 const app = express();
 const httpServer = createServer(app);
+
+// CORS configuration for production
+const corsOptions = {
+  origin: process.env.NODE_ENV === 'production' 
+    ? ['https://yeehawtmcfly.github.io', 'https://quickpoll-api.onrender.com']
+    : 'http://localhost:5173',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+  credentials: true
+};
+
 const io = new Server(httpServer, {
-  cors: {
-    origin: 'http://localhost:5173', // Vue dev server default port
-    methods: ['GET', 'POST']
-  }
+  cors: corsOptions
 });
+
 const PORT = process.env.PORT || 3000;
 
 // Set the Socket.IO instance for routes
 setSocketIo(io);
 
 // Middleware
-app.use(cors());
+app.use(cors(corsOptions));
 app.use(express.json());
+
+// Health check endpoint for Render
+app.get('/api/health', (req, res) => {
+  res.status(200).json({ status: 'OK', timestamp: new Date().toISOString() });
+});
 
 // Routes
 app.use('/api/polls', pollRoutes);
@@ -39,6 +52,7 @@ io.on('connection', (socket) => {
 // Connect to MongoDB and start server
 connectDB().then(() => {
   httpServer.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+    console.log(`Server running on port ${PORT}`);
+    console.log(`Environment: ${process.env.NODE_ENV}`);
   });
 });

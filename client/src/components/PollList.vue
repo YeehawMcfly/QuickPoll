@@ -21,8 +21,8 @@ const searchQuery = ref('');
 const auth = useAuth();
 const router = useRouter();
 
-const API_URL = 'http://localhost:3000/api';
-const socket = io('http://localhost:3000');
+const API_URL = auth.getApiUrl();
+const socket = io(API_URL);
 
 const filteredPolls = computed(() => {
   if (!searchQuery.value.trim()) return polls.value;
@@ -48,7 +48,7 @@ const createNewPoll = () => {
 // Fetch polls on component mount
 onMounted(async () => {
   try {
-    const response = await fetch(`${API_URL}/polls`);
+    const response = await fetch(`${API_URL}/api/polls`);
     if (!response.ok) throw new Error('Failed to fetch polls');
     polls.value = await response.json();
   } catch (err) {

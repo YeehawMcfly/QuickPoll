@@ -11,6 +11,9 @@ interface AuthState {
   user: User | null;
 }
 
+// Get API URL from environment variables
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
 // Create a reactive state object to track authentication
 const state = ref<AuthState>({
   token: localStorage.getItem('token'),
@@ -22,13 +25,57 @@ export const useAuth = () => {
   const isAuthenticated = computed(() => !!state.value.token);
   
   // Login function to set token and user
-  const login = (token: string, user: User) => {
-    state.value.token = token;
-    state.value.user = user;
+  const login = async (email: string, password: string) => {
+    const response = await fetch(`${API_URL}/api/auth/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email, password }),
+    });
+    
+    if (!response.ok) {
+      const data = await response.json();
+      throw new Error(data.message || 'Login failed');
+    }
+    
+    const data = await response.json();
+    
+    state.value.token = data.token;
+    state.value.user = data.user;
     
     // Store in localStorage
-    localStorage.setItem('token', token);
-    localStorage.setItem('user', JSON.stringify(user));
+    localStorage.setItem('token', data.token);
+    localStorage.setItem('user', JSON.stringify(data.user));
+    
+    return data;
+  };
+  
+  // Register function
+  const register = async (username: string, email: string, password: string) => {
+    const response = await fetch(`${API_URL}/api/auth/register`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ username, email, password }),
+    });
+    
+    if (!response.ok) {
+      const data = await response.json();
+      throw new Error(data.message || 'Registration failed');
+    }
+    
+    const data = await response.json();
+    
+    state.value.token = data.token;
+    state.value.user = data.user;
+    
+    // Store in localStorage
+    localStorage.setItem('token', data.token);
+    localStorage.setItem('user', JSON.stringify(data.user));
+    
+    return data;
   };
   
   // Logout function to clear token and user
@@ -57,11 +104,18 @@ export const useAuth = () => {
     return state.value.user;
   };
   
+  // Get API URL for components
+  const getApiUrl = (): string => {
+    return API_URL;
+  };
+  
   return {
     isAuthenticated,
     login,
+    register,
     logout,
     getToken,
-    getUser
+    getUser,
+    getApiUrl
   };
 };

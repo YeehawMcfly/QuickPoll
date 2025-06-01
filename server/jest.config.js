@@ -5,8 +5,6 @@ module.exports = {
   testPathIgnorePatterns: [
     '/node_modules/',
     '/dist/',
-    'globalSetup.ts',
-    'globalTeardown.ts',
     'testSetup.ts'
   ],
   coverageDirectory: 'coverage',
@@ -19,10 +17,10 @@ module.exports = {
   setupFilesAfterEnv: ['<rootDir>/src/__tests__/testSetup.ts'],
   testTimeout: 30000,
   maxWorkers: 1,
-  // Use the test TypeScript configuration
-  globals: {
-    'ts-jest': {
+  transform: {
+    '^.+\\.(ts|tsx)$': ['ts-jest', {
       tsconfig: 'tsconfig.test.json'
-    }
-  }
+    }],
+  },
+  moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
 };

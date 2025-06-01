@@ -34,7 +34,11 @@ const PollSchema = new mongoose.Schema({
   creator: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: true
+    required: function(this: any) {
+      // Only require creator for new documents
+      // This allows existing polls without creator to remain valid
+      return this.isNew;
+    }
   },
   isActive: {
     type: Boolean,

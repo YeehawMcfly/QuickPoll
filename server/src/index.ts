@@ -48,6 +48,34 @@ app.get('/api/health', (req, res) => {
 app.use('/api/polls', pollRoutes);
 app.use('/api/auth', authRoutes);
 
+// Debug endpoint to check database connection and users
+app.get('/api/debug/info', async (req, res) => {
+  try {
+    const mongoose = require('mongoose');
+    const { User } = require('./models/userModel');
+    
+    const userCount = await User.countDocuments();
+    const sampleUsers = await User.find({}, 'username email createdAt').limit(3);
+    
+    res.json({
+      environment: process.env.NODE_ENV,
+      databaseName: mongoose.connection.name,
+      databaseState: mongoose.connection.readyState,
+      databaseHost: mongoose.connection.host,
+      totalUsers: userCount,
+      sampleUsers: sampleUsers,
+      mongoUri: process.env.MONGODB_URI ? process.env.MONGODB_URI.replace(/\/\/([^:]+):([^@]+)@/, '//***:***@') : 'Not set',
+      corsOrigin: process.env.CORS_ORIGIN || 'Not set'
+    });
+  } catch (error) {
+    res.status(500).json({ 
+      error: error.message,
+      environment: process.env.NODE_ENV,
+      mongoUri: process.env.MONGODB_URI ? 'Set but connection failed' : 'Not set'
+    });
+  }
+});
+
 // Socket.io
 io.on('connection', (socket) => {
   console.log('A user connected:', socket.id);

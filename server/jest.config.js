@@ -18,5 +18,11 @@ module.exports = {
   ],
   setupFilesAfterEnv: ['<rootDir>/src/__tests__/testSetup.ts'],
   testTimeout: 30000,
-  maxWorkers: 1, // Run tests serially to avoid database conflicts
+  maxWorkers: 1,
+  // Use the test TypeScript configuration
+  globals: {
+    'ts-jest': {
+      tsconfig: 'tsconfig.test.json'
+    }
+  }
 };

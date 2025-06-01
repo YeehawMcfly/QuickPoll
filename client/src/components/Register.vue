@@ -13,8 +13,6 @@ const confirmPassword = ref('');
 const error = ref<string | null>(null);
 const loading = ref(false);
 
-const API_URL = auth.getApiUrl();
-
 const register = async () => {
   if (!username.value || !email.value || !password.value) {
     error.value = 'Please fill out all fields';
@@ -35,27 +33,8 @@ const register = async () => {
   error.value = null;
   
   try {
-    const response = await fetch(`${API_URL}/api/auth/register`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        username: username.value,
-        email: email.value,
-        password: password.value,
-      }),
-    });
-    
-    if (!response.ok) {
-      const data = await response.json();
-      throw new Error(data.message || 'Registration failed');
-    }
-    
-    const data = await response.json();
-    
-    // Store token and user in auth store
-    auth.login(data.token, data.user);
+    // Call auth store register function with the form data
+    await auth.register(username.value, email.value, password.value);
     
     // Redirect to home
     router.push('/');

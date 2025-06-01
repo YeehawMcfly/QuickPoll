@@ -24,7 +24,7 @@ export const useAuth = () => {
   // Computed property to check if user is authenticated
   const isAuthenticated = computed(() => !!state.value.token);
   
-  // Login function
+  // Login function - for API authentication
   const login = async (email: string, password: string) => {
     console.log('Auth store login called with:', { email, password: password ? 'provided' : 'missing' });
     
@@ -47,14 +47,20 @@ export const useAuth = () => {
     const data = await response.json();
     console.log('Auth store login successful:', { user: data.user, hasToken: !!data.token });
     
-    state.value.token = data.token;
-    state.value.user = data.user;
-    
-    // Store in localStorage
-    localStorage.setItem('token', data.token);
-    localStorage.setItem('user', JSON.stringify(data.user));
+    // Store the authentication data
+    setAuthData(data.token, data.user);
     
     return data;
+  };
+
+  // Helper function to set auth data (used by both login and register)
+  const setAuthData = (token: string, user: User) => {
+    state.value.token = token;
+    state.value.user = user;
+    
+    // Store in localStorage
+    localStorage.setItem('token', token);
+    localStorage.setItem('user', JSON.stringify(user));
   };
   
   // Register function
@@ -80,12 +86,8 @@ export const useAuth = () => {
     const data = await response.json();
     console.log('Registration successful:', { user: data.user, hasToken: !!data.token });
     
-    state.value.token = data.token;
-    state.value.user = data.user;
-    
-    // Store in localStorage
-    localStorage.setItem('token', data.token);
-    localStorage.setItem('user', JSON.stringify(data.user));
+    // Store the authentication data
+    setAuthData(data.token, data.user);
     
     return data;
   };

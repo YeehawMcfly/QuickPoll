@@ -11,8 +11,6 @@ const password = ref('');
 const error = ref<string | null>(null);
 const loading = ref(false);
 
-const API_URL = auth.getApiUrl();
-
 const login = async () => {
   if (!email.value || !password.value) {
     error.value = 'Please enter your email and password';
@@ -26,33 +24,12 @@ const login = async () => {
     console.log('Frontend login attempt:', {
       email: email.value,
       password: password.value ? 'provided' : 'missing',
-      apiUrl: API_URL
     });
 
-    const response = await fetch(`${API_URL}/api/auth/login`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        email: email.value,
-        password: password.value,
-      }),
-    });
+    // Call the auth store login function with email and password
+    await auth.login(email.value, password.value);
     
-    console.log('Login response status:', response.status);
-    
-    if (!response.ok) {
-      const data = await response.json();
-      console.error('Login failed response:', data);
-      throw new Error(data.message || 'Login failed');
-    }
-    
-    const data = await response.json();
-    console.log('Login successful:', { hasToken: !!data.token, user: data.user });
-    
-    // Store token and user in auth store
-    auth.login(data.token, data.user);
+    console.log('Login successful, redirecting to home');
     
     // Redirect to home
     router.push('/');

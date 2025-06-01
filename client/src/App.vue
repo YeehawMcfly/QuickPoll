@@ -1,263 +1,409 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import { useAuth } from './store/auth';
+import { ref, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
-import PageTransition from './components/PageTransition.vue';
+import { useAuth } from './store/auth';
+import { io, Socket } from 'socket.io-client';
 
-const { isAuthenticated, logout } = useAuth();
+const auth = useAuth();
 const router = useRouter();
-const notification = ref('');
-const showNotification = ref(false);
-const appLoaded = ref(false);
 
-const displayNotification = (message: string) => {
-  notification.value = message;
-  showNotification.value = true;
-  setTimeout(() => (showNotification.value = false), 3000);
-};
+// Socket connection
+let socket: Socket;
+const newPollNotification = ref(false);
 
-const onLogout = () => {
-  logout(); 
-  displayNotification('You have been logged out successfully');
+const logout = () => {
+  auth.logout();
   router.push('/');
 };
 
 onMounted(() => {
-  setTimeout(() => {
-    appLoaded.value = true;
-  }, 500);
+  // Connect to socket for real-time notifications
+  socket = io(auth.getApiUrl());
+  
+  socket.on('newPoll', () => {
+    newPollNotification.value = true;
+    setTimeout(() => {
+      newPollNotification.value = false;
+    }, 3000);
+  });
+});
+
+onUnmounted(() => {
+  if (socket) {
+    socket.disconnect();
+  }
 });
 </script>
 
 <template>
-  <div v-if="!appLoaded" class="app-loader">
-    <div class="loader"></div>
-  </div>
-  
-  <div v-else class="app-container">
-    <header>
-      <div class="logo-container">
-        <h1>QuickPoll</h1>
-        <span class="tagline">Create and share polls in seconds</span>
+  <div class="app-container">
+    <!-- Modern Header -->
+    <header class="modern-header">
+      <div class="header-content">
+        <div class="logo-section">
+          <router-link to="/" class="logo-link">
+            <div class="logo-icon">📊</div>
+            <div class="logo-text">
+              <h1 class="logo-title">QuickPoll</h1>
+              <span class="logo-subtitle">Real-time Polling</span>
+            </div>
+          </router-link>
+        </div>
+
+        <nav class="main-nav">
+          <router-link to="/" class="nav-link">
+            <span class="nav-icon">🏠</span>
+            <span class="nav-text">Home</span>
+          </router-link>
+          
+          <router-link v-if="auth.isAuthenticated.value" to="/create" class="nav-link">
+            <span class="nav-icon">➕</span>
+            <span class="nav-text">Create</span>
+          </router-link>
+          
+          <router-link v-if="auth.isAuthenticated.value" to="/dashboard" class="nav-link">
+            <span class="nav-icon">📈</span>
+            <span class="nav-text">Dashboard</span>
+          </router-link>
+        </nav>
+
+        <div class="auth-section">
+          <template v-if="!auth.isAuthenticated.value">
+            <router-link to="/login" class="auth-btn login">
+              <span class="auth-icon">🔐</span>
+              <span>Login</span>
+            </router-link>
+            <router-link to="/register" class="auth-btn register primary">
+              <span class="auth-icon">✨</span>
+              <span>Sign Up</span>
+            </router-link>
+          </template>
+          
+          <template v-else>
+            <div class="user-info">
+              <div class="user-avatar">
+                {{ auth.getUser()?.username?.charAt(0)?.toUpperCase() }}
+              </div>
+              <div class="user-details">
+                <span class="user-name">{{ auth.getUser()?.username }}</span>
+                <span class="user-email">{{ auth.getUser()?.email }}</span>
+              </div>
+            </div>
+            <button @click="logout" class="auth-btn logout">
+              <span class="auth-icon">🚪</span>
+              <span>Logout</span>
+            </button>
+          </template>
+        </div>
       </div>
-      <nav>
-        <router-link to="/" class="nav-link">Home</router-link>
-
-        <template v-if="isAuthenticated">
-          <router-link to="/create" class="nav-link">Create Poll</router-link>
-          <router-link to="/dashboard" class="nav-link">My Polls</router-link>
-          <button @click="onLogout" class="auth-btn logout">
-            <span class="icon">👤</span> Logout
-          </button>
-        </template>
-
-        <template v-else>
-          <router-link to="/login" class="auth-btn login nav-link">
-            <span class="icon">👤</span> Login
-          </router-link>
-          <router-link to="/register" class="auth-btn register nav-link">
-            Register
-          </router-link>
-        </template>
-      </nav>
     </header>
 
-    <div v-if="showNotification" class="notification">{{ notification }}</div>
-    <main>
-      <PageTransition>
-        <router-view/>
-      </PageTransition>
+    <!-- New Poll Notification -->
+    <div v-if="newPollNotification" class="notification">
+      <span class="notification-icon">🎉</span>
+      New poll created! Check it out.
+    </div>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <div class="content-wrapper">
+        <router-view />
+      </div>
     </main>
-    <footer>
+
+    <!-- Modern Footer -->
+    <footer class="modern-footer">
       <div class="footer-content">
-        <p>QuickPoll - Real-time polling application</p>
-        <div class="footer-links">
-          <a href="#">About</a>
-          <a href="#">Terms</a>
-          <a href="#">Privacy</a>
+        <div class="footer-section">
+          <div class="footer-logo">
+            <span class="footer-icon">📊</span>
+            <span class="footer-brand">QuickPoll</span>
+          </div>
+          <p class="footer-description">Create and share polls instantly with real-time results.</p>
         </div>
+        
+        <div class="footer-section">
+          <h4>Quick Links</h4>
+          <div class="footer-links">
+            <router-link to="/">Home</router-link>
+            <router-link to="/create" v-if="auth.isAuthenticated.value">Create Poll</router-link>
+            <router-link to="/dashboard" v-if="auth.isAuthenticated.value">Dashboard</router-link>
+          </div>
+        </div>
+        
+        <div class="footer-section">
+          <h4>Built with</h4>
+          <div class="tech-stack">
+            <span class="tech-item">Vue 3</span>
+            <span class="tech-item">TypeScript</span>
+            <span class="tech-item">Node.js</span>
+            <span class="tech-item">MongoDB</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="footer-bottom">
+        <p>&copy; 2024 QuickPoll. Made with ❤️ for instant polling.</p>
       </div>
     </footer>
   </div>
 </template>
 
-<style>
-.app-loader {
+<style scoped>
+.app-container {
+  min-height: 100vh;
   display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
+  flex-direction: column;
   background: var(--background);
 }
 
-.loader {
-  width: 40px;
-  height: 40px;
-  border: 4px solid rgba(79, 70, 229, 0.2);
-  border-top: 4px solid #4f46e5;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-body {
-  margin: 0;
-  min-height: 100vh;
-  display: flex;
-  font-family: system-ui, -apple-system, sans-serif;
-}
-
-#app {
-  width: 100%;
-  max-width: 100%;
-  margin: 0;
-  padding: 0;
-  text-align: left;
-}
-
-.app-container {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-  position: relative;
-}
-
-/* Improved header styling for logged out state */
-header {
-  background: linear-gradient(90deg, #1e293b 0%, #334155 100%);
-  padding: 1rem 2rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+/* Modern Header Styles */
+.modern-header {
+  background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   position: sticky;
   top: 0;
-  z-index: 10;
+  z-index: 100;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
 
-.logo-container h1 {
-  background: linear-gradient(90deg, #4f46e5 0%, #818cf8 100%);
+.header-content {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 1rem 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+}
+
+.logo-section {
+  flex-shrink: 0;
+}
+
+.logo-link {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  padding: 0.5rem;
+  border-radius: 12px;
+}
+
+.logo-link:hover {
+  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.logo-icon {
+  font-size: 2.5rem;
+  filter: drop-shadow(0 4px 8px rgba(99, 102, 241, 0.3));
+}
+
+.logo-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.logo-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0;
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
-.tagline {
-  font-size: 0.9rem;
-  color: #94a3b8;
-  margin-top: -0.5rem;
-  font-weight: 300;
+.logo-subtitle {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
 }
 
-nav {
+.main-nav {
   display: flex;
-  gap: 1rem;
-  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+  justify-content: center;
 }
 
-nav a {
-  color: #f1f5f9;
-  text-decoration: none;
-  padding: 0.6rem 1.2rem;
-  border-radius: 8px;
-  transition: all 0.25s ease;
-  font-weight: 500;
-}
-
-nav a:hover {
-  background-color: rgba(255, 255, 255, 0.1);
-  transform: translateY(-2px);
-}
-
-nav a.router-link-active {
-  background: linear-gradient(90deg, #4f46e5 0%, #818cf8 100%);
-  color: white;
-  box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3);
-}
-
-/* unify link base style */
-nav .nav-link {
-  color: #f1f5f9;
-  background: transparent;
-  border: 1px solid transparent;
-  padding: 0.6rem 1.2rem;
-  border-radius: 8px;
-  font-weight: 500;
-  transition: 0.25s ease;
-  text-decoration: none;
-}
-nav .nav-link:hover {
-  background: rgba(255,255,255,0.1);
-  transform: translateY(-2px);
-}
-
-/* active link gradient */
-nav .nav-link.router-link-active {
-  background: linear-gradient(90deg, #4f46e5 0%, #818cf8 100%);
-  color: white;
-  box-shadow: 0 4px 10px rgba(79,70,229,0.3);
-}
-
-/* logout stays a button */
-.auth-btn.logout {
-  background: transparent;
-  border: 1px solid #f87171;
-  color: #f87171;
+.nav-link {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-}
-.auth-btn.logout:hover {
-  background: rgba(248,113,113,0.1);
-  transform: translateY(-2px);
-}
-
-/* remove permanent gradients */
-.auth-btn.login,
-.auth-btn.register {
-  background: transparent;
-  border: 1px solid #818cf8;
-  color: #f1f5f9;
-}
-.auth-btn.login:hover,
-.auth-btn.register:hover {
-  background: rgba(129,140,248,0.1);
-  transform: translateY(-2px);
+  padding: 0.75rem 1.25rem;
+  border-radius: 12px;
+  text-decoration: none;
+  color: var(--text-secondary);
+  font-weight: 500;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
 }
 
-/* login/register active gradient */
-.auth-btn.login.router-link-active,
-.auth-btn.register.router-link-active {
-  background: linear-gradient(90deg, #4f46e5 0%, #818cf8 100%);
+.nav-link::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  transition: left 0.5s ease;
+}
+
+.nav-link:hover::before {
+  left: 100%;
+}
+
+.nav-link:hover {
+  color: var(--text-primary);
+  background: rgba(99, 102, 241, 0.1);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
+}
+
+.nav-link.router-link-active {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
   color: white;
-  border-color: transparent;
-  box-shadow: 0 4px 10px rgba(79,70,229,0.3);
+  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.4);
 }
 
-.icon {
-  font-size: 0.95rem;
+.nav-icon {
+  font-size: 1.1rem;
 }
 
+.nav-text {
+  font-size: 0.9rem;
+}
+
+.auth-section {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-shrink: 0;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  color: white;
+  font-size: 1.1rem;
+}
+
+.user-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.user-name {
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+}
+
+.user-email {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.auth-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  border-radius: 12px;
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.auth-btn.login {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.auth-btn.login:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+  transform: translateY(-2px);
+}
+
+.auth-btn.register.primary {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+  color: white;
+  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.3);
+}
+
+.auth-btn.register.primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(99, 102, 241, 0.4);
+}
+
+.auth-btn.logout {
+  background: transparent;
+  color: var(--danger);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.auth-btn.logout:hover {
+  background: rgba(239, 68, 68, 0.1);
+  transform: translateY(-2px);
+}
+
+.auth-icon {
+  font-size: 1rem;
+}
+
+/* Notification */
 .notification {
   position: fixed;
-  top: 20px;
-  right: 20px;
-  background: linear-gradient(90deg, #10b981 0%, #34d399 100%);
+  top: 100px;
+  right: 2rem;
+  background: linear-gradient(135deg, var(--secondary) 0%, #34d399 100%);
   color: white;
   padding: 1rem 1.5rem;
-  border-radius: 8px;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(16, 185, 129, 0.3);
   z-index: 1000;
-  animation: slideIn 0.3s ease-out;
-  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+  animation: slideInRight 0.5s ease-out;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
   font-weight: 500;
 }
 
-@keyframes slideIn {
+.notification-icon {
+  font-size: 1.2rem;
+}
+
+@keyframes slideInRight {
   from {
     transform: translateX(100%);
     opacity: 0;
@@ -268,128 +414,265 @@ nav .nav-link.router-link-active {
   }
 }
 
-main {
+/* Main Content */
+.main-content {
   flex: 1;
-  padding: 2rem;
-  max-width: 1200px;
-  width: 100%;
+  min-height: calc(100vh - 200px);
+}
+
+.content-wrapper {
+  max-width: 1400px;
   margin: 0 auto;
-  animation: fadeIn 0.5s ease-out;
+  padding: 2rem;
+  animation: fadeIn 0.6s ease-out;
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from { 
+    opacity: 0; 
+    transform: translateY(20px);
+  }
+  to { 
+    opacity: 1; 
+    transform: translateY(0);
+  }
 }
 
-footer {
-  background: linear-gradient(90deg, #1a1e2c 0%, #2d3748 100%);
-  padding: 2rem;
-  color: #94a3b8;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
+/* Modern Footer - Updated for better visibility */
+.modern-footer {
+  background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  margin-top: auto;
 }
 
 .footer-content {
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
+  padding: 3rem 2rem 2rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 2rem;
+}
+
+.footer-section h4 {
+  color: #f1f5f9;
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.footer-logo {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.footer-icon {
+  font-size: 1.5rem;
+}
+
+.footer-brand {
+  font-size: 1.25rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.footer-description {
+  color: #cbd5e1;
+  line-height: 1.6;
+  margin: 0;
 }
 
 .footer-links {
   display: flex;
-  gap: 2rem;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
 .footer-links a {
-  color: #94a3b8;
+  color: #e2e8f0;
   text-decoration: none;
-  transition: all 0.3s ease;
+  padding: 0.25rem 0;
+  transition: color 0.3s ease;
 }
 
 .footer-links a:hover {
-  color: #e5e7eb;
-  transform: translateY(-2px);
+  color: var(--primary-light);
 }
 
-/* Light mode styles */
+.tech-stack {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.tech-item {
+  background: rgba(99, 102, 241, 0.2);
+  color: #c7d2fe;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  border: 1px solid rgba(99, 102, 241, 0.3);
+}
+
+.footer-bottom {
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 1.5rem 2rem;
+  text-align: center;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.footer-bottom p {
+  color: #cbd5e1;
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+/* Light mode adjustments */
 @media (prefers-color-scheme: light) {
-  header {
-    background: linear-gradient(90deg, #4f46e5 0%, #818cf8 100%);
+  .modern-header {
+    background: rgba(248, 250, 252, 0.95);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
   }
   
-  .logo-container h1 {
-    background: white;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    text-shadow: 0 2px 10px rgba(255, 255, 255, 0.1);
+  .logo-link:hover {
+    background: rgba(0, 0, 0, 0.05);
   }
   
-  .tagline {
-    color: rgba(255, 255, 255, 0.9);
+  .nav-link {
+    color: var(--text-secondary);
   }
   
-  nav a {
-    color: white;
+  .nav-link:hover {
+    background: rgba(99, 102, 241, 0.1);
   }
   
-  nav a:hover {
-    background-color: rgba(255, 255, 255, 0.2);
-  }
-  
-  nav a.router-link-active {
-    background-color: white;
-    color: #4f46e5;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  .user-info {
+    background: rgba(0, 0, 0, 0.05);
+    border-color: rgba(0, 0, 0, 0.1);
   }
   
   .auth-btn.login {
-    color: white;
-    border: 1px solid rgba(255, 255, 255, 0.5);
-    background-color: rgba(255, 255, 255, 0.2);
+    border-color: rgba(0, 0, 0, 0.2);
   }
   
   .auth-btn.login:hover {
-    background-color: rgba(255, 255, 255, 0.3);
+    background: rgba(0, 0, 0, 0.05);
   }
   
-  .highlight-btn.register {
-    background-color: white;
-    color: #4f46e5;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  .modern-footer {
+    background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+    border-top: 1px solid rgba(0, 0, 0, 0.15);
   }
   
-  .auth-btn.logout {
-    color: white;
-    border: 1px solid rgba(255, 255, 255, 0.7);
+  .footer-section h4 {
+    color: #1e293b;
   }
   
-  .auth-btn.logout:hover {
-    background-color: rgba(255, 255, 255, 0.2);
+  .footer-description {
+    color: #475569;
+  }
+  
+  .footer-links a {
+    color: #334155;
+  }
+  
+  .footer-links a:hover {
+    color: var(--primary);
+  }
+  
+  .tech-item {
+    background: rgba(99, 102, 241, 0.1);
+    color: var(--primary);
+    border-color: rgba(99, 102, 241, 0.2);
+  }
+  
+  .footer-bottom p {
+    color: #64748b;
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .header-content {
+    padding: 1rem;
+  }
+  
+  .main-nav {
+    gap: 0.25rem;
+  }
+  
+  .nav-text {
+    display: none;
+  }
+  
+  .user-details {
+    display: none;
   }
 }
 
 @media (max-width: 768px) {
-  header {
+  .header-content {
     flex-direction: column;
-    align-items: flex-start;
+    gap: 1rem;
+    align-items: stretch;
   }
   
-  nav {
-    margin-top: 1rem;
-    width: 100%;
-    justify-content: space-between;
+  .logo-section {
+    align-self: center;
+  }
+  
+  .main-nav {
+    justify-content: center;
+    order: 2;
+  }
+  
+  .auth-section {
+    justify-content: center;
+    order: 1;
+  }
+  
+  .nav-text {
+    display: block;
+  }
+  
+  .content-wrapper {
+    padding: 1rem;
   }
   
   .footer-content {
-    flex-direction: column;
-    text-align: center;
+    padding: 2rem 1rem 1rem;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
   }
   
-  .footer-links {
-    margin-top: 1rem;
+  .notification {
+    right: 1rem;
+    left: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .logo-icon {
+    font-size: 2rem;
+  }
+  
+  .logo-title {
+    font-size: 1.25rem;
+  }
+  
+  .nav-link {
+    padding: 0.5rem 0.75rem;
+  }
+  
+  .auth-btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.8rem;
   }
 }
 </style>

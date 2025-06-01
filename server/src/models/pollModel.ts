@@ -7,6 +7,7 @@ export interface IPoll extends Document {
   createdAt: Date;
   creator: mongoose.Types.ObjectId;
   isActive: boolean;
+  votedBy: mongoose.Types.ObjectId[]; // Add this line
 }
 
 const PollSchema = new mongoose.Schema({
@@ -35,15 +36,18 @@ const PollSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: function(this: any) {
-      // Only require creator for new documents
-      // This allows existing polls without creator to remain valid
       return this.isNew;
     }
   },
   isActive: {
     type: Boolean,
     default: true
-  }
+  },
+  votedBy: [{ // Add this field
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: []
+  }]
 });
 
 // Export as a mongoose model

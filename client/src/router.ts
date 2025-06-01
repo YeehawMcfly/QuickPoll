@@ -19,7 +19,7 @@ const routes = [
 const base = import.meta.env.PROD ? '/QuickPoll/' : '/';
 
 const router = createRouter({
-  history: createWebHistory(base),
+  history: createWebHistory(import.meta.env.BASE_URL || '/QuickPoll/'), 
   routes,
 });
 

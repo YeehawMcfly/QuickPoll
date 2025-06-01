@@ -72,35 +72,41 @@ const createPoll: AsyncRouteHandler = async (req, res) => {
   }
 };
 
-// Vote on a poll (public)
+// Vote on a poll (now authenticated)
 const voteOnPoll: AsyncRouteHandler = async (req, res) => {
   try {
     const { optionIndex } = req.body;
     const poll = await Poll.findById(req.params.id);
-    
+    const userId = req.userId; // Available from auth middleware
+
     if (!poll) {
       res.status(404).json({ message: 'Poll not found' });
       return;
     }
-    
+
     if (poll.isActive === false) {
       res.status(400).json({ message: 'This poll is no longer active' });
       return;
     }
-    
+
     if (optionIndex < 0 || optionIndex >= poll.options.length) {
       res.status(400).json({ message: 'Invalid option index' });
       return;
     }
-    
+
+    // Check if user has already voted
+    if (poll.votedBy.includes(userId as mongoose.Types.ObjectId)) {
+      res.status(403).json({ message: 'You have already voted on this poll.' });
+      return;
+    }
+
     // Increment the vote count for the selected option
     poll.votes[optionIndex] += 1;
-    
-    // Use updateOne to avoid validation issues with older polls
-    await Poll.updateOne(
-      { _id: poll._id },
-      { $set: { votes: poll.votes } }
-    );
+    poll.votedBy.push(userId as mongoose.Types.ObjectId); // Add user to votedBy list
+
+    // Use updateOne to avoid validation issues with older polls if only votes changed
+    // However, since we are also updating votedBy, a full save is appropriate here.
+    await poll.save();
     
     // Emit poll updated event via Socket.IO
     if (io) {
@@ -109,7 +115,8 @@ const voteOnPoll: AsyncRouteHandler = async (req, res) => {
     
     res.json(poll);
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error });
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    res.status(500).json({ message: 'Server error', error: errorMessage });
   }
 };
 
@@ -176,7 +183,7 @@ const deletePoll: AsyncRouteHandler = async (req, res) => {
 router.get('/', getAllPolls);
 router.get('/:id', getPollById);
 router.post('/', auth, createPoll);
-router.post('/:id/vote', voteOnPoll);
+router.post('/:id/vote', auth, voteOnPoll); // Add auth middleware here
 router.get('/user/polls', auth, getUserPolls);
 router.patch('/:id/status', auth, updatePollStatus);
 router.delete('/:id', auth, deletePoll);

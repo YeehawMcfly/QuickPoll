@@ -146,42 +146,83 @@ describe('Poll Routes', () => {
   });
 
   describe('POST /api/polls/:id/vote', () => {
-    it('should increment vote count for specified option', async () => {
+    it('should increment vote count for specified option for an authenticated user', async () => {
       const pollDoc = await Poll.create({
         question: 'Test question?',
         options: ['Option 1', 'Option 2'],
         votes: [0, 0],
-        creator: testUserId
+        creator: testUserId // Assuming testUserId is from a different user or not relevant for voting itself
       });
 
       const pollId = (pollDoc._id as mongoose.Types.ObjectId).toString();
 
       const response = await request(app)
         .post(`/api/polls/${pollId}/vote`)
+        .set('Authorization', `Bearer ${authToken}`) // authToken for the voting user
         .send({ optionIndex: 1 });
 
       expect(response.status).toBe(200);
       expect(response.body.votes).toEqual([0, 1]);
+      expect(response.body.votedBy).toContain(testUserId.toString());
     });
 
-    it('should return 400 for invalid option index', async () => {
+    it('should return 401 for unauthenticated vote attempts', async () => {
       const pollDoc = await Poll.create({
         question: 'Test question?',
         options: ['Option 1', 'Option 2'],
-        votes: [0, 0],
-        creator: testUserId
+        creator: new mongoose.Types.ObjectId() 
       });
-
       const pollId = (pollDoc._id as mongoose.Types.ObjectId).toString();
 
       const response = await request(app)
         .post(`/api/polls/${pollId}/vote`)
+        .send({ optionIndex: 0 });
+      
+      expect(response.status).toBe(401); // Because auth middleware is now applied
+    });
+
+    it('should return 403 if an authenticated user tries to vote again on the same poll', async () => {
+      const pollDoc = await Poll.create({
+        question: 'Test question for double vote?',
+        options: ['Yes', 'No'],
+        creator: new mongoose.Types.ObjectId()
+      });
+      const pollId = (pollDoc._id as mongoose.Types.ObjectId).toString();
+
+      // First vote
+      await request(app)
+        .post(`/api/polls/${pollId}/vote`)
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({ optionIndex: 0 });
+
+      // Second vote attempt
+      const response = await request(app)
+        .post(`/api/polls/${pollId}/vote`)
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({ optionIndex: 1 });
+      
+      expect(response.status).toBe(403);
+      expect(response.body.message).toBe('You have already voted on this poll.');
+    });
+    
+    it('should return 400 for invalid option index (authenticated)', async () => {
+      const pollDoc = await Poll.create({
+        question: 'Test question?',
+        options: ['Option 1', 'Option 2'],
+        votes: [0, 0],
+        creator: testUserId 
+      });
+      const pollId = (pollDoc._id as mongoose.Types.ObjectId).toString();
+
+      const response = await request(app)
+        .post(`/api/polls/${pollId}/vote`)
+        .set('Authorization', `Bearer ${authToken}`)
         .send({ optionIndex: 5 }); // Out of bounds
 
       expect(response.status).toBe(400);
     });
 
-    it('should return 400 for inactive poll', async () => {
+    it('should return 400 for inactive poll (authenticated)', async () => {
       const pollDoc = await Poll.create({
         question: 'Test question?',
         options: ['Option 1', 'Option 2'],
@@ -189,13 +230,13 @@ describe('Poll Routes', () => {
         creator: testUserId,
         isActive: false
       });
-
       const pollId = (pollDoc._id as mongoose.Types.ObjectId).toString();
 
       const response = await request(app)
         .post(`/api/polls/${pollId}/vote`)
+        .set('Authorization', `Bearer ${authToken}`)
         .send({ optionIndex: 0 });
-
+      
       expect(response.status).toBe(400);
       expect(response.body.message).toBe('This poll is no longer active');
     });

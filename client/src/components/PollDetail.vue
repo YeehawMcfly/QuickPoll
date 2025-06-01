@@ -54,16 +54,20 @@ const submitVote = async () => {
   
   if (!auth.isAuthenticated.value) {
     error.value = "Please log in to vote on this poll";
-    router.push('/login');
+    // Optionally, redirect or show a more prominent login prompt
+    // router.push('/login'); 
     return;
   }
   
   votingInProgress.value = true;
+  error.value = null; // Clear previous errors
   try {
+    const token = auth.getToken(); // Get token for authenticated request
     const response = await fetch(`${API_URL}/api/polls/${pollId.value}/vote`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`, // Add Authorization header
       },
       body: JSON.stringify({
         optionIndex: selectedOption.value,
@@ -75,8 +79,10 @@ const submitVote = async () => {
       throw new Error(data.message || 'Failed to submit vote');
     }
     
-    poll.value = await response.json();
-    selectedOption.value = null;
+    const updatedPollData = await response.json();
+    // Update poll.value with the full response to reflect new votes and potentially votedBy status
+    poll.value = updatedPollData; 
+    selectedOption.value = null; // Reset selection
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Unknown error occurred';
   } finally {
@@ -105,7 +111,12 @@ onMounted(() => {
       <h1>{{ poll.question }}</h1>
       <p class="date">Created on: {{ new Date(poll.createdAt).toLocaleDateString() }}</p>
       
-      <div v-if="!auth.isAuthenticated.value" class="login-prompt">
+      <!-- Display general error messages (like "already voted") -->
+      <div v-if="error" class="error-message" style="margin-bottom: 1rem; background-color: rgba(239, 68, 68, 0.1); color: #ef4444; padding: 0.5rem; border-left: 3px solid #ef4444;">
+        {{ error }}
+      </div>
+      
+      <div v-if="!auth.isAuthenticated.value && !error" class="login-prompt"> <!-- Hide if there's already an error message -->
         <p>Please <router-link to="/login">log in</router-link> to vote on this poll.</p>
       </div>
 
@@ -281,6 +292,14 @@ onMounted(() => {
   padding: 0.75rem 1rem;
   margin: 1rem 0;
   color: #3b82f6;
+}
+
+.error-message {
+  margin-bottom: 1rem;
+  background-color: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  padding: 0.5rem;
+  border-left: 3px solid #ef4444;
 }
 
 @media (prefers-color-scheme: light) {

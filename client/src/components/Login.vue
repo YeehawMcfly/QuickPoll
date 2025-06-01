@@ -23,6 +23,12 @@ const login = async () => {
   error.value = null;
   
   try {
+    console.log('Frontend login attempt:', {
+      email: email.value,
+      password: password.value ? 'provided' : 'missing',
+      apiUrl: API_URL
+    });
+
     const response = await fetch(`${API_URL}/api/auth/login`, {
       method: 'POST',
       headers: {
@@ -34,12 +40,16 @@ const login = async () => {
       }),
     });
     
+    console.log('Login response status:', response.status);
+    
     if (!response.ok) {
       const data = await response.json();
+      console.error('Login failed response:', data);
       throw new Error(data.message || 'Login failed');
     }
     
     const data = await response.json();
+    console.log('Login successful:', { hasToken: !!data.token, user: data.user });
     
     // Store token and user in auth store
     auth.login(data.token, data.user);
@@ -47,6 +57,7 @@ const login = async () => {
     // Redirect to home
     router.push('/');
   } catch (err) {
+    console.error('Login error:', err);
     error.value = err instanceof Error ? err.message : 'Login failed';
   } finally {
     loading.value = false;

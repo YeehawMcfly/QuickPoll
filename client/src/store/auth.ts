@@ -24,8 +24,10 @@ export const useAuth = () => {
   // Computed property to check if user is authenticated
   const isAuthenticated = computed(() => !!state.value.token);
   
-  // Login function to set token and user
+  // Login function
   const login = async (email: string, password: string) => {
+    console.log('Auth store login called with:', { email, password: password ? 'provided' : 'missing' });
+    
     const response = await fetch(`${API_URL}/api/auth/login`, {
       method: 'POST',
       headers: {
@@ -34,12 +36,16 @@ export const useAuth = () => {
       body: JSON.stringify({ email, password }),
     });
     
+    console.log('Auth store response status:', response.status);
+    
     if (!response.ok) {
       const data = await response.json();
+      console.error('Auth store login failed:', data);
       throw new Error(data.message || 'Login failed');
     }
     
     const data = await response.json();
+    console.log('Auth store login successful:', { user: data.user, hasToken: !!data.token });
     
     state.value.token = data.token;
     state.value.user = data.user;

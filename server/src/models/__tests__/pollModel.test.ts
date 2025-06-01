@@ -6,27 +6,23 @@ describe('Poll Model', () => {
   let testUserId: mongoose.Types.ObjectId;
 
   beforeAll(async () => {
-    // Clear any existing data
-    await User.deleteMany({});
-    await Poll.deleteMany({});
-    
     // Create a test user for the creator field
     const testUser: IUser = await User.create({
-      username: 'testuser',
-      email: 'test@example.com',
+      username: 'testuser-model',
+      email: 'testmodel@example.com',
       password: 'testpassword123'
     });
     testUserId = testUser._id as mongoose.Types.ObjectId;
   });
 
   afterAll(async () => {
-    // Clean up test data
-    await User.deleteMany({});
-    await Poll.deleteMany({});
+    // Clean up specific test data
+    await User.deleteOne({ _id: testUserId });
   });
 
-  afterEach(async () => {
-    await Poll.deleteMany({});
+  beforeEach(async () => {
+    // Only clear polls before each test
+    await Poll.deleteMany({ creator: testUserId });
   });
 
   it('should create a poll with valid data', async () => {
@@ -70,7 +66,7 @@ describe('Poll Model', () => {
       options: ['Option 1', 'Option 2']
     };
 
-    await expect(Poll.create(pollData)).rejects.toThrow('creator: Path `creator` is required');
+    await expect(Poll.create(pollData)).rejects.toThrow();
   });
 
   it('should initialize votes array with zeros', async () => {

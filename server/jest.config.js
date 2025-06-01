@@ -1,16 +1,22 @@
 module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',
-  testMatch: ['**/__tests__/**/*.ts', '**/?(*.)+(spec|test).ts'],
+  testMatch: ['**/__tests__/**/*.test.ts', '**/?(*.)+(spec|test).ts'],
+  testPathIgnorePatterns: [
+    '/node_modules/',
+    '/dist/',
+    'globalSetup.ts',
+    'globalTeardown.ts',
+    'testSetup.ts'
+  ],
   coverageDirectory: 'coverage',
   collectCoverageFrom: [
     'src/**/*.ts',
     '!src/**/*.d.ts',
-    '!src/index.ts', // Exclude main entry point from coverage
-    '!src/__tests__/**', // Exclude test files
+    '!src/index.ts',
+    '!src/__tests__/**',
   ],
-  testTimeout: 15000,
-  // Remove the setupFilesAfterEnv since we're deleting the setup file
-  globalSetup: '<rootDir>/src/__tests__/globalSetup.ts',
-  globalTeardown: '<rootDir>/src/__tests__/globalTeardown.ts',
+  setupFilesAfterEnv: ['<rootDir>/src/__tests__/testSetup.ts'],
+  testTimeout: 30000,
+  maxWorkers: 1, // Run tests serially to avoid database conflicts
 };

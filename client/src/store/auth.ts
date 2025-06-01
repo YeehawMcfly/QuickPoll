@@ -53,6 +53,8 @@ export const useAuth = () => {
   
   // Register function
   const register = async (username: string, email: string, password: string) => {
+    console.log('Attempting registration with API:', API_URL);
+    
     const response = await fetch(`${API_URL}/api/auth/register`, {
       method: 'POST',
       headers: {
@@ -61,12 +63,16 @@ export const useAuth = () => {
       body: JSON.stringify({ username, email, password }),
     });
     
+    console.log('Registration response status:', response.status);
+    
     if (!response.ok) {
       const data = await response.json();
+      console.error('Registration failed:', data);
       throw new Error(data.message || 'Registration failed');
     }
     
     const data = await response.json();
+    console.log('Registration successful:', { user: data.user, hasToken: !!data.token });
     
     state.value.token = data.token;
     state.value.user = data.user;

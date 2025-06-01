@@ -1,4 +1,5 @@
 import express, { Request, Response } from 'express';
+import mongoose from 'mongoose';
 import { Poll } from '../models/pollModel';
 import { Server } from 'socket.io';
 import { auth } from '../middleware/auth';
@@ -94,15 +95,17 @@ const voteOnPoll: AsyncRouteHandler = async (req, res) => {
       return;
     }
 
-    // Check if user has already voted
-    if (poll.votedBy.includes(userId as mongoose.Types.ObjectId)) {
+    // Check if user has already voted - fix the mongoose.Types.ObjectId reference
+    if (userId && poll.votedBy.includes(new mongoose.Types.ObjectId(userId))) {
       res.status(403).json({ message: 'You have already voted on this poll.' });
       return;
     }
 
     // Increment the vote count for the selected option
     poll.votes[optionIndex] += 1;
-    poll.votedBy.push(userId as mongoose.Types.ObjectId); // Add user to votedBy list
+    if (userId) { // Ensure userId exists before pushing
+        poll.votedBy.push(new mongoose.Types.ObjectId(userId)); // Fix this line
+    }
 
     // Use updateOne to avoid validation issues with older polls if only votes changed
     // However, since we are also updating votedBy, a full save is appropriate here.

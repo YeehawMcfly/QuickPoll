@@ -37,7 +37,7 @@ onUnmounted(() => {
 
 <template>
   <div class="app-container">
-    <!-- Modern Header -->
+    <!-- Refined Header -->
     <header class="modern-header">
       <div class="header-content">
         <div class="logo-section">
@@ -51,11 +51,6 @@ onUnmounted(() => {
         </div>
 
         <nav class="main-nav">
-          <router-link to="/" class="nav-link">
-            <span class="nav-icon">🏠</span>
-            <span class="nav-text">Home</span>
-          </router-link>
-          
           <router-link v-if="auth.isAuthenticated.value" to="/create" class="nav-link">
             <span class="nav-icon">➕</span>
             <span class="nav-text">Create</span>
@@ -63,7 +58,7 @@ onUnmounted(() => {
           
           <router-link v-if="auth.isAuthenticated.value" to="/dashboard" class="nav-link">
             <span class="nav-icon">📈</span>
-            <span class="nav-text">Dashboard</span>
+            <span class="nav-text">My Polls</span>
           </router-link>
         </nav>
 
@@ -73,7 +68,7 @@ onUnmounted(() => {
               <span class="auth-icon">🔐</span>
               <span>Login</span>
             </router-link>
-            <router-link to="/register" class="auth-btn register primary">
+            <router-link to="/register" class="auth-btn register">
               <span class="auth-icon">✨</span>
               <span>Sign Up</span>
             </router-link>
@@ -86,7 +81,6 @@ onUnmounted(() => {
               </div>
               <div class="user-details">
                 <span class="user-name">{{ auth.getUser()?.username }}</span>
-                <span class="user-email">{{ auth.getUser()?.email }}</span>
               </div>
             </div>
             <button @click="logout" class="auth-btn logout">
@@ -111,7 +105,7 @@ onUnmounted(() => {
       </div>
     </main>
 
-    <!-- Modern Footer -->
+    <!-- Refined Footer -->
     <footer class="modern-footer">
       <div class="footer-content">
         <div class="footer-section">
@@ -127,7 +121,7 @@ onUnmounted(() => {
           <div class="footer-links">
             <router-link to="/">Home</router-link>
             <router-link to="/create" v-if="auth.isAuthenticated.value">Create Poll</router-link>
-            <router-link to="/dashboard" v-if="auth.isAuthenticated.value">Dashboard</router-link>
+            <router-link to="/dashboard" v-if="auth.isAuthenticated.value">My Polls</router-link>
           </div>
         </div>
         
@@ -157,21 +151,21 @@ onUnmounted(() => {
   background: var(--background);
 }
 
-/* Modern Header Styles */
+/* Refined Header Styles */
 .modern-header {
-  background: rgba(15, 23, 42, 0.95);
-  backdrop-filter: blur(20px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(15, 23, 42, 0.9);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   position: sticky;
   top: 0;
   z-index: 100;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
 }
 
 .header-content {
-  max-width: 1400px;
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 1rem 2rem;
+  padding: 0.75rem 1.5rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -185,21 +179,21 @@ onUnmounted(() => {
 .logo-link {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.75rem;
   text-decoration: none;
-  transition: all 0.3s ease;
-  padding: 0.5rem;
-  border-radius: 12px;
+  transition: all 0.2s ease;
+  padding: 0.25rem 0.5rem;
+  border-radius: 8px;
 }
 
 .logo-link:hover {
-  transform: translateY(-2px);
-  background: rgba(255, 255, 255, 0.05);
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.04);
 }
 
 .logo-icon {
-  font-size: 2.5rem;
-  filter: drop-shadow(0 4px 8px rgba(99, 102, 241, 0.3));
+  font-size: 1.75rem;
+  filter: drop-shadow(0 2px 4px rgba(99, 102, 241, 0.3));
 }
 
 .logo-text {
@@ -208,21 +202,22 @@ onUnmounted(() => {
 }
 
 .logo-title {
-  font-size: 1.5rem;
-  font-weight: 700;
+  font-size: 1.25rem;
+  font-weight: 600;
   margin: 0;
-  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%);
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
 .logo-subtitle {
-  font-size: 0.75rem;
+  font-size: 0.65rem;
   color: var(--text-muted);
   font-weight: 500;
   letter-spacing: 0.05em;
   text-transform: uppercase;
+  line-height: 1;
 }
 
 .main-nav {
@@ -236,56 +231,39 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.75rem 1.25rem;
-  border-radius: 12px;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
   text-decoration: none;
   color: var(--text-secondary);
   font-weight: 500;
-  transition: all 0.3s ease;
-  position: relative;
-  overflow: hidden;
-}
-
-.nav-link::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
-  transition: left 0.5s ease;
-}
-
-.nav-link:hover::before {
-  left: 100%;
+  transition: all 0.2s ease;
+  font-size: 0.9rem;
 }
 
 .nav-link:hover {
   color: var(--text-primary);
-  background: rgba(99, 102, 241, 0.1);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
+  background: rgba(99, 102, 241, 0.08);
+  transform: translateY(-1px);
 }
 
 .nav-link.router-link-active {
   background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
   color: white;
-  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.4);
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
 }
 
 .nav-icon {
-  font-size: 1.1rem;
+  font-size: 1rem;
 }
 
 .nav-text {
-  font-size: 0.9rem;
+  font-size: 0.85rem;
 }
 
 .auth-section {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.75rem;
   flex-shrink: 0;
 }
 
@@ -293,15 +271,15 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.5rem 1rem;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0.5rem 0.75rem;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .user-avatar {
-  width: 40px;
-  height: 40px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
   display: flex;
@@ -309,7 +287,7 @@ onUnmounted(() => {
   justify-content: center;
   font-weight: 600;
   color: white;
-  font-size: 1.1rem;
+  font-size: 0.9rem;
 }
 
 .user-details {
@@ -318,26 +296,21 @@ onUnmounted(() => {
 }
 
 .user-name {
-  font-weight: 600;
+  font-weight: 500;
   color: var(--text-primary);
-  font-size: 0.9rem;
-}
-
-.user-email {
-  font-size: 0.75rem;
-  color: var(--text-muted);
+  font-size: 0.85rem;
 }
 
 .auth-btn {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.75rem 1.25rem;
-  border-radius: 12px;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
   text-decoration: none;
   font-weight: 500;
-  font-size: 0.9rem;
-  transition: all 0.3s ease;
+  font-size: 0.85rem;
+  transition: all 0.2s ease;
   border: none;
   cursor: pointer;
   white-space: nowrap;
@@ -346,61 +319,62 @@ onUnmounted(() => {
 .auth-btn.login {
   background: transparent;
   color: var(--text-secondary);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 .auth-btn.login:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.04);
   color: var(--text-primary);
-  transform: translateY(-2px);
+  transform: translateY(-1px);
 }
 
-.auth-btn.register.primary {
+.auth-btn.register {
   background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
   color: white;
-  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.3);
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.25);
 }
 
-.auth-btn.register.primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 24px rgba(99, 102, 241, 0.4);
+.auth-btn.register:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
 }
 
 .auth-btn.logout {
   background: transparent;
   color: var(--danger);
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  border: 1px solid rgba(239, 68, 68, 0.25);
 }
 
 .auth-btn.logout:hover {
-  background: rgba(239, 68, 68, 0.1);
-  transform: translateY(-2px);
+  background: rgba(239, 68, 68, 0.08);
+  transform: translateY(-1px);
 }
 
 .auth-icon {
-  font-size: 1rem;
+  font-size: 0.9rem;
 }
 
 /* Notification */
 .notification {
   position: fixed;
-  top: 100px;
-  right: 2rem;
+  top: 80px;
+  right: 1.5rem;
   background: linear-gradient(135deg, var(--secondary) 0%, #34d399 100%);
   color: white;
-  padding: 1rem 1.5rem;
-  border-radius: 12px;
-  box-shadow: 0 8px 32px rgba(16, 185, 129, 0.3);
+  padding: 0.75rem 1.25rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(16, 185, 129, 0.25);
   z-index: 1000;
-  animation: slideInRight 0.5s ease-out;
+  animation: slideInRight 0.4s ease-out;
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.5rem;
   font-weight: 500;
+  font-size: 0.9rem;
 }
 
 .notification-icon {
-  font-size: 1.2rem;
+  font-size: 1rem;
 }
 
 @keyframes slideInRight {
@@ -417,20 +391,20 @@ onUnmounted(() => {
 /* Main Content */
 .main-content {
   flex: 1;
-  min-height: calc(100vh - 200px);
+  min-height: calc(100vh - 160px);
 }
 
 .content-wrapper {
-  max-width: 1400px;
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 2rem;
-  animation: fadeIn 0.6s ease-out;
+  padding: 1.5rem;
+  animation: fadeIn 0.4s ease-out;
 }
 
 @keyframes fadeIn {
   from { 
     opacity: 0; 
-    transform: translateY(20px);
+    transform: translateY(10px);
   }
   to { 
     opacity: 1; 
@@ -438,43 +412,43 @@ onUnmounted(() => {
   }
 }
 
-/* Modern Footer - Updated for better visibility */
+/* Refined Footer */
 .modern-footer {
   background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
-  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
   margin-top: auto;
 }
 
 .footer-content {
-  max-width: 1400px;
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 3rem 2rem 2rem;
+  padding: 2rem 1.5rem 1.5rem;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 2rem;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
 }
 
 .footer-section h4 {
   color: #f1f5f9;
-  margin-bottom: 1rem;
-  font-size: 1.1rem;
+  margin-bottom: 0.75rem;
+  font-size: 1rem;
   font-weight: 600;
 }
 
 .footer-logo {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 1rem;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
 }
 
 .footer-icon {
-  font-size: 1.5rem;
+  font-size: 1.25rem;
 }
 
 .footer-brand {
-  font-size: 1.25rem;
-  font-weight: 700;
+  font-size: 1.1rem;
+  font-weight: 600;
   background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -483,21 +457,23 @@ onUnmounted(() => {
 
 .footer-description {
   color: #cbd5e1;
-  line-height: 1.6;
+  line-height: 1.5;
   margin: 0;
+  font-size: 0.9rem;
 }
 
 .footer-links {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.4rem;
 }
 
 .footer-links a {
   color: #e2e8f0;
   text-decoration: none;
-  padding: 0.25rem 0;
-  transition: color 0.3s ease;
+  padding: 0.2rem 0;
+  transition: color 0.2s ease;
+  font-size: 0.9rem;
 }
 
 .footer-links a:hover {
@@ -507,67 +483,63 @@ onUnmounted(() => {
 .tech-stack {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: 0.4rem;
 }
 
 .tech-item {
-  background: rgba(99, 102, 241, 0.2);
+  background: rgba(99, 102, 241, 0.15);
   color: #c7d2fe;
-  padding: 0.25rem 0.75rem;
-  border-radius: 20px;
-  font-size: 0.8rem;
-  border: 1px solid rgba(99, 102, 241, 0.3);
+  padding: 0.2rem 0.6rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  border: 1px solid rgba(99, 102, 241, 0.25);
 }
 
 .footer-bottom {
-  border-top: 1px solid rgba(255, 255, 255, 0.2);
-  padding: 1.5rem 2rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+  padding: 1rem 1.5rem;
   text-align: center;
-  max-width: 1400px;
+  max-width: 1200px;
   margin: 0 auto;
 }
 
 .footer-bottom p {
   color: #cbd5e1;
   margin: 0;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
 }
 
 /* Light mode adjustments */
 @media (prefers-color-scheme: light) {
   .modern-header {
-    background: rgba(248, 250, 252, 0.95);
-    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    background: rgba(248, 250, 252, 0.9);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
   }
   
   .logo-link:hover {
-    background: rgba(0, 0, 0, 0.05);
-  }
-  
-  .nav-link {
-    color: var(--text-secondary);
+    background: rgba(0, 0, 0, 0.04);
   }
   
   .nav-link:hover {
-    background: rgba(99, 102, 241, 0.1);
+    background: rgba(99, 102, 241, 0.08);
   }
   
   .user-info {
-    background: rgba(0, 0, 0, 0.05);
-    border-color: rgba(0, 0, 0, 0.1);
+    background: rgba(0, 0, 0, 0.04);
+    border-color: rgba(0, 0, 0, 0.08);
   }
   
   .auth-btn.login {
-    border-color: rgba(0, 0, 0, 0.2);
+    border-color: rgba(0, 0, 0, 0.15);
   }
   
   .auth-btn.login:hover {
-    background: rgba(0, 0, 0, 0.05);
+    background: rgba(0, 0, 0, 0.04);
   }
   
   .modern-footer {
     background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
-    border-top: 1px solid rgba(0, 0, 0, 0.15);
+    border-top: 1px solid rgba(0, 0, 0, 0.12);
   }
   
   .footer-section h4 {
@@ -600,7 +572,7 @@ onUnmounted(() => {
 /* Responsive Design */
 @media (max-width: 1024px) {
   .header-content {
-    padding: 1rem;
+    padding: 0.75rem 1rem;
   }
   
   .main-nav {
@@ -619,8 +591,9 @@ onUnmounted(() => {
 @media (max-width: 768px) {
   .header-content {
     flex-direction: column;
-    gap: 1rem;
+    gap: 0.75rem;
     align-items: stretch;
+    padding: 0.75rem 1rem;
   }
   
   .logo-section {
@@ -646,32 +619,33 @@ onUnmounted(() => {
   }
   
   .footer-content {
-    padding: 2rem 1rem 1rem;
+    padding: 1.5rem 1rem 1rem;
     grid-template-columns: 1fr;
-    gap: 1.5rem;
+    gap: 1rem;
   }
   
   .notification {
     right: 1rem;
     left: 1rem;
+    font-size: 0.85rem;
   }
 }
 
 @media (max-width: 480px) {
   .logo-icon {
-    font-size: 2rem;
+    font-size: 1.5rem;
   }
   
   .logo-title {
-    font-size: 1.25rem;
+    font-size: 1.1rem;
   }
   
   .nav-link {
-    padding: 0.5rem 0.75rem;
+    padding: 0.4rem 0.75rem;
   }
   
   .auth-btn {
-    padding: 0.5rem 1rem;
+    padding: 0.4rem 0.75rem;
     font-size: 0.8rem;
   }
 }

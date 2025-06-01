@@ -12,7 +12,6 @@ interface AuthState {
   votedPolls: Set<string>; // Track polls user has voted on
 }
 
-// Create a reactive state object to track authentication
 const state = ref<AuthState>({
   token: null,
   user: null,
@@ -47,7 +46,6 @@ const initializeAuth = () => {
 initializeAuth();
 
 export const useAuth = () => {
-  // Computed property to check if user is authenticated
   const isAuthenticated = computed(() => !!state.value.token);
   
   // Check if user has voted on a specific poll
@@ -61,7 +59,32 @@ export const useAuth = () => {
     localStorage.setItem('votedPolls', JSON.stringify([...state.value.votedPolls]));
   };
   
-  // Login function - for API authentication
+  // Check if user has voted on poll from server response
+  const checkVotedStatus = async (pollId: string) => {
+    if (!isAuthenticated.value) return false;
+    
+    try {
+      const response = await fetch(`${API_URL}/api/polls/${pollId}/voted`, {
+        headers: {
+          'Authorization': `Bearer ${state.value.token}`,
+        },
+      });
+      
+      if (response.ok) {
+        const { hasVoted } = await response.json();
+        if (hasVoted) {
+          markPollAsVoted(pollId);
+        }
+        return hasVoted;
+      }
+    } catch (error) {
+      console.log('Could not check vote status:', error);
+    }
+    
+    return hasVotedOnPoll(pollId);
+  };
+  
+  // Login function
   const login = async (email: string, password: string) => {
     console.log('Auth store login called with:', { email, password: password ? 'provided' : 'missing' });
     
@@ -84,23 +107,18 @@ export const useAuth = () => {
     const data = await response.json();
     console.log('Auth store login successful:', { user: data.user, hasToken: !!data.token });
     
-    // Store the authentication data
     setAuthData(data.token, data.user);
-    
     return data;
   };
 
-  // Helper function to set auth data (used by both login and register)
   const setAuthData = (token: string, user: User) => {
     state.value.token = token;
     state.value.user = user;
     
-    // Store in localStorage
     localStorage.setItem('token', token);
     localStorage.setItem('user', JSON.stringify(user));
   };
   
-  // Register function
   const register = async (username: string, email: string, password: string) => {
     console.log('Attempting registration with API:', API_URL);
     
@@ -123,41 +141,32 @@ export const useAuth = () => {
     const data = await response.json();
     console.log('Registration successful:', { user: data.user, hasToken: !!data.token });
     
-    // Store the authentication data
     setAuthData(data.token, data.user);
-    
     return data;
   };
   
-  // Logout function to clear token and user
   const logout = () => {
-    // Clear state
     state.value.token = null;
     state.value.user = null;
     state.value.votedPolls.clear();
     
-    // Clear localStorage
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     localStorage.removeItem('votedPolls');
     
-    // Optional: Force a page refresh after a short delay
     setTimeout(() => {
       window.location.reload();
     }, 300);
   };
   
-  // Function to get current token
   const getToken = (): string | null => {
     return state.value.token;
   };
   
-  // Function to get current user
   const getUser = (): User | null => {
     return state.value.user;
   };
   
-  // Get API URL for components
   const getApiUrl = (): string => {
     return API_URL;
   };
@@ -166,6 +175,7 @@ export const useAuth = () => {
     isAuthenticated,
     hasVotedOnPoll,
     markPollAsVoted,
+    checkVotedStatus,
     login,
     register,
     logout,

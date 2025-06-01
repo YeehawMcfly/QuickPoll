@@ -21,6 +21,7 @@ const selectedOption = ref<number | null>(null);
 const loading = ref(true);
 const error = ref<string | null>(null);
 const votingInProgress = ref(false);
+const checkingVoteStatus = ref(true);
 
 const auth = useAuth();
 const API_URL = auth.getApiUrl();
@@ -51,6 +52,21 @@ const fetchPoll = async () => {
     error.value = err instanceof Error ? err.message : 'Unknown error occurred';
   } finally {
     loading.value = false;
+  }
+};
+
+const checkVoteStatus = async () => {
+  if (!auth.isAuthenticated.value) {
+    checkingVoteStatus.value = false;
+    return;
+  }
+  
+  try {
+    await auth.checkVotedStatus(pollId.value);
+  } catch (err) {
+    console.log('Could not check vote status:', err);
+  } finally {
+    checkingVoteStatus.value = false;
   }
 };
 
@@ -106,8 +122,9 @@ const submitVote = async () => {
   }
 };
 
-onMounted(() => {
-  fetchPoll();
+onMounted(async () => {
+  await fetchPoll();
+  await checkVoteStatus();
   
   socket.on('pollUpdated', (updatedPoll: Poll) => {
     if (updatedPoll._id === pollId.value) {
@@ -147,8 +164,14 @@ onMounted(() => {
         </div>
       </div>
 
+      <!-- Vote status checking -->
+      <div v-if="checkingVoteStatus && auth.isAuthenticated.value" class="status-checking">
+        <div class="checking-spinner"></div>
+        <p>Checking your vote status...</p>
+      </div>
+
       <!-- Already voted message -->
-      <div v-if="hasVoted && !error" class="success-message">
+      <div v-else-if="hasVoted && !error" class="success-message">
         <div class="success-icon">✅</div>
         <div class="success-content">
           <h4>You've already voted!</h4>
@@ -157,7 +180,7 @@ onMounted(() => {
       </div>
 
       <!-- Login prompt for unauthenticated users -->
-      <div v-if="!auth.isAuthenticated.value && !hasVoted" class="login-prompt">
+      <div v-else-if="!auth.isAuthenticated.value && !hasVoted && !checkingVoteStatus" class="login-prompt">
         <div class="login-icon">🔐</div>
         <div class="login-content">
           <h4>Login Required</h4>
@@ -174,7 +197,7 @@ onMounted(() => {
               class="option"
               :class="{ 
                 'selected': selectedOption === index, 
-                'disabled': hasVoted || !auth.isAuthenticated.value,
+                'disabled': hasVoted || !auth.isAuthenticated.value || checkingVoteStatus,
                 'voted': hasVoted 
               }"
             >
@@ -186,10 +209,10 @@ onMounted(() => {
                     :value="index" 
                     v-model="selectedOption" 
                     name="poll-option"
-                    :disabled="hasVoted || !auth.isAuthenticated.value"
+                    :disabled="hasVoted || !auth.isAuthenticated.value || checkingVoteStatus"
                   />
                   <label :for="`option-${index}`" class="option-label">{{ option }}</label>
-                  <div v-if="hasVoted" class="voted-indicator">✓</div>
+                  <div v-if="hasVoted" class="voted-indicator">✓ Voted</div>
                 </div>
                 
                 <div class="progress-container">
@@ -206,7 +229,7 @@ onMounted(() => {
             </div>
           </div>
           
-          <div class="vote-actions" v-if="!hasVoted">
+          <div class="vote-actions" v-if="!hasVoted && !checkingVoteStatus">
             <button 
               type="submit" 
               class="vote-btn" 
@@ -241,7 +264,7 @@ onMounted(() => {
   padding: 1.5rem;
 }
 
-.loading {
+.loading, .status-checking {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -249,7 +272,7 @@ onMounted(() => {
   color: #9ca3af;
 }
 
-.loading-spinner {
+.loading-spinner, .checking-spinner {
   width: 32px;
   height: 32px;
   border: 3px solid rgba(99, 102, 241, 0.2);
@@ -268,6 +291,14 @@ onMounted(() => {
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
+}
+
+.status-checking {
+  background: rgba(99, 102, 241, 0.08);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  border-radius: 12px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
 }
 
 .error-container, .not-found {
@@ -472,8 +503,12 @@ onMounted(() => {
   position: absolute;
   right: 0;
   color: #10b981;
-  font-weight: bold;
-  font-size: 1.2rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+  background: rgba(16, 185, 129, 0.15);
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  border: 1px solid rgba(16, 185, 129, 0.3);
 }
 
 .option-input input[type="radio"] {
@@ -682,6 +717,18 @@ onMounted(() => {
   .vote-btn {
     min-width: auto;
     width: 100%;
+  }
+  
+  .voted-indicator {
+    position: static;
+    margin-top: 0.5rem;
+    align-self: flex-start;
+  }
+  
+  .option-input {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
   }
 }
 </style>

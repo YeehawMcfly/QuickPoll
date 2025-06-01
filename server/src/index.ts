@@ -68,8 +68,9 @@ app.get('/api/debug/info', async (req, res) => {
       corsOrigin: process.env.CORS_ORIGIN || 'Not set'
     });
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     res.status(500).json({ 
-      error: error.message,
+      error: errorMessage,
       environment: process.env.NODE_ENV,
       mongoUri: process.env.MONGODB_URI ? 'Set but connection failed' : 'Not set'
     });

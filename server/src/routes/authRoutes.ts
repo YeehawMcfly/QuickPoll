@@ -109,7 +109,8 @@ const loginUser: AsyncRouteHandler = async (req, res) => {
     });
   } catch (error) {
     console.error('[LOGIN] Error:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    res.status(500).json({ message: 'Server error', error: errorMessage });
   }
 };
 

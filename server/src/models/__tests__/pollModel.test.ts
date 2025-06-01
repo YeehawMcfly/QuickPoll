@@ -1,25 +1,28 @@
 import mongoose from 'mongoose';
 import { Poll } from '../pollModel';
-import { User } from '../userModel';
+import { User, IUser } from '../userModel';
 
 describe('Poll Model', () => {
   let testUserId: mongoose.Types.ObjectId;
 
   beforeAll(async () => {
-    await mongoose.connect('mongodb://127.0.0.1:27017/test-db');
+    // Clear any existing data
+    await User.deleteMany({});
+    await Poll.deleteMany({});
     
     // Create a test user for the creator field
-    const testUser = await User.create({
+    const testUser: IUser = await User.create({
       username: 'testuser',
       email: 'test@example.com',
       password: 'testpassword123'
     });
-    testUserId = testUser._id;
+    testUserId = testUser._id as mongoose.Types.ObjectId;
   });
 
   afterAll(async () => {
-    await mongoose.connection.dropDatabase();
-    await mongoose.connection.close();
+    // Clean up test data
+    await User.deleteMany({});
+    await Poll.deleteMany({});
   });
 
   afterEach(async () => {
@@ -68,5 +71,27 @@ describe('Poll Model', () => {
     };
 
     await expect(Poll.create(pollData)).rejects.toThrow('creator: Path `creator` is required');
+  });
+
+  it('should initialize votes array with zeros', async () => {
+    const pollData = {
+      question: 'Test question with 3 options?',
+      options: ['Option 1', 'Option 2', 'Option 3'],
+      creator: testUserId
+    };
+
+    const poll = await Poll.create(pollData);
+    expect(poll.votes).toEqual([0, 0, 0]);
+  });
+
+  it('should set isActive to true by default', async () => {
+    const pollData = {
+      question: 'Test question?',
+      options: ['Option 1', 'Option 2'],
+      creator: testUserId
+    };
+
+    const poll = await Poll.create(pollData);
+    expect(poll.isActive).toBe(true);
   });
 });

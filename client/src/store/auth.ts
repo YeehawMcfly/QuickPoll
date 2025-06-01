@@ -9,20 +9,57 @@ interface User {
 interface AuthState {
   token: string | null;
   user: User | null;
+  votedPolls: Set<string>; // Track polls user has voted on
 }
-
-// Get API URL from environment variables
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 // Create a reactive state object to track authentication
 const state = ref<AuthState>({
-  token: localStorage.getItem('token'),
-  user: localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')!) : null
+  token: null,
+  user: null,
+  votedPolls: new Set()
 });
+
+// API URL configuration
+const API_URL = import.meta.env.VITE_API_URL || 'https://quickpoll-api-qilq.onrender.com';
+
+// Initialize from localStorage
+const initializeAuth = () => {
+  const token = localStorage.getItem('token');
+  const userStr = localStorage.getItem('user');
+  const votedPollsStr = localStorage.getItem('votedPolls');
+  
+  if (token && userStr) {
+    try {
+      state.value.token = token;
+      state.value.user = JSON.parse(userStr);
+      
+      if (votedPollsStr) {
+        state.value.votedPolls = new Set(JSON.parse(votedPollsStr));
+      }
+    } catch (error) {
+      console.error('Error parsing stored auth data:', error);
+      localStorage.clear();
+    }
+  }
+};
+
+// Initialize on module load
+initializeAuth();
 
 export const useAuth = () => {
   // Computed property to check if user is authenticated
   const isAuthenticated = computed(() => !!state.value.token);
+  
+  // Check if user has voted on a specific poll
+  const hasVotedOnPoll = (pollId: string) => {
+    return state.value.votedPolls.has(pollId);
+  };
+  
+  // Mark poll as voted
+  const markPollAsVoted = (pollId: string) => {
+    state.value.votedPolls.add(pollId);
+    localStorage.setItem('votedPolls', JSON.stringify([...state.value.votedPolls]));
+  };
   
   // Login function - for API authentication
   const login = async (email: string, password: string) => {
@@ -97,10 +134,12 @@ export const useAuth = () => {
     // Clear state
     state.value.token = null;
     state.value.user = null;
+    state.value.votedPolls.clear();
     
     // Clear localStorage
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    localStorage.removeItem('votedPolls');
     
     // Optional: Force a page refresh after a short delay
     setTimeout(() => {
@@ -125,6 +164,8 @@ export const useAuth = () => {
   
   return {
     isAuthenticated,
+    hasVotedOnPoll,
+    markPollAsVoted,
     login,
     register,
     logout,

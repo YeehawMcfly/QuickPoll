@@ -21,11 +21,15 @@ const selectedOption = ref<number | null>(null);
 const loading = ref(true);
 const error = ref<string | null>(null);
 const votingInProgress = ref(false);
-const hasVoted = ref(false);
 
 const auth = useAuth();
 const API_URL = auth.getApiUrl();
 const socket = io(API_URL);
+
+// Check if user has voted (from local storage + server response)
+const hasVoted = computed(() => {
+  return auth.hasVotedOnPoll(pollId.value);
+});
 
 const totalVotes = computed(() => {
   if (!poll.value) return 0;
@@ -58,6 +62,11 @@ const submitVote = async () => {
     return;
   }
   
+  if (hasVoted.value) {
+    error.value = "You have already voted on this poll";
+    return;
+  }
+  
   votingInProgress.value = true;
   error.value = null;
   
@@ -77,7 +86,8 @@ const submitVote = async () => {
     if (!response.ok) {
       const data = await response.json();
       if (response.status === 403) {
-        hasVoted.value = true;
+        // Mark as voted even if server says already voted
+        auth.markPollAsVoted(pollId.value);
         return;
       }
       throw new Error(data.message || 'Failed to submit vote');
@@ -85,7 +95,9 @@ const submitVote = async () => {
     
     const updatedPollData = await response.json();
     poll.value = updatedPollData;
-    hasVoted.value = true;
+    
+    // Mark this poll as voted in local storage
+    auth.markPollAsVoted(pollId.value);
     selectedOption.value = null;
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Unknown error occurred';
@@ -114,7 +126,7 @@ onMounted(() => {
     
     <div v-else-if="error" class="error-container">
       <div class="error-icon">⚠️</div>
-      <h3>Oops! Something went wrong</h3>
+      <h3>Something went wrong</h3>
       <p>{{ error }}</p>
       <button @click="fetchPoll" class="retry-btn">Try Again</button>
     </div>
@@ -135,12 +147,12 @@ onMounted(() => {
         </div>
       </div>
 
-      <!-- Success message for users who have voted -->
+      <!-- Already voted message -->
       <div v-if="hasVoted && !error" class="success-message">
         <div class="success-icon">✅</div>
         <div class="success-content">
-          <h4>Thank you for voting!</h4>
-          <p>Your vote has been recorded. You can see the live results below.</p>
+          <h4>You've already voted!</h4>
+          <p>Thanks for participating! You can see the live results below.</p>
         </div>
       </div>
 
@@ -160,7 +172,11 @@ onMounted(() => {
               v-for="(option, index) in poll.options" 
               :key="index" 
               class="option"
-              :class="{ 'selected': selectedOption === index, 'disabled': hasVoted || !auth.isAuthenticated.value }"
+              :class="{ 
+                'selected': selectedOption === index, 
+                'disabled': hasVoted || !auth.isAuthenticated.value,
+                'voted': hasVoted 
+              }"
             >
               <div class="option-content">
                 <div class="option-input">
@@ -173,6 +189,7 @@ onMounted(() => {
                     :disabled="hasVoted || !auth.isAuthenticated.value"
                   />
                   <label :for="`option-${index}`" class="option-label">{{ option }}</label>
+                  <div v-if="hasVoted" class="voted-indicator">✓</div>
                 </div>
                 
                 <div class="progress-container">
@@ -189,27 +206,19 @@ onMounted(() => {
             </div>
           </div>
           
-          <div class="vote-actions">
+          <div class="vote-actions" v-if="!hasVoted">
             <button 
               type="submit" 
               class="vote-btn" 
-              :disabled="selectedOption === null || votingInProgress || !auth.isAuthenticated.value || hasVoted"
-              :class="{ 'voted': hasVoted }"
+              :disabled="selectedOption === null || votingInProgress || !auth.isAuthenticated.value"
             >
               <span v-if="votingInProgress" class="loading-spinner small"></span>
-              <span v-else-if="hasVoted" class="vote-icon">✓</span>
               <span v-else-if="!auth.isAuthenticated.value" class="vote-icon">🔒</span>
               <span v-else class="vote-icon">📊</span>
               
               {{ votingInProgress ? 'Submitting...' : 
-                  hasVoted ? 'Voted' : 
                   !auth.isAuthenticated.value ? 'Login to Vote' : 'Submit Vote' }}
             </button>
-            
-            <div v-if="hasVoted" class="vote-status">
-              <span class="status-icon">✓</span>
-              <span>You've already voted on this poll</span>
-            </div>
           </div>
         </form>
       </div>
@@ -225,11 +234,11 @@ onMounted(() => {
 
 <style scoped>
 .poll-detail {
-  min-height: 60vh;
+  min-height: 50vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 2rem;
+  padding: 1.5rem;
 }
 
 .loading {
@@ -241,8 +250,8 @@ onMounted(() => {
 }
 
 .loading-spinner {
-  width: 40px;
-  height: 40px;
+  width: 32px;
+  height: 32px;
   border: 3px solid rgba(99, 102, 241, 0.2);
   border-top: 3px solid #6366f1;
   border-radius: 50%;
@@ -263,15 +272,15 @@ onMounted(() => {
 
 .error-container, .not-found {
   text-align: center;
-  padding: 3rem 2rem;
+  padding: 2rem;
   background: rgba(239, 68, 68, 0.05);
   border: 2px solid rgba(239, 68, 68, 0.1);
-  border-radius: 16px;
-  max-width: 500px;
+  border-radius: 12px;
+  max-width: 400px;
 }
 
 .error-icon, .not-found-icon {
-  font-size: 3rem;
+  font-size: 2.5rem;
   margin-bottom: 1rem;
   display: block;
 }
@@ -281,7 +290,7 @@ onMounted(() => {
   color: white;
   border: none;
   padding: 0.75rem 1.5rem;
-  border-radius: 12px;
+  border-radius: 8px;
   font-weight: 500;
   text-decoration: none;
   display: inline-block;
@@ -291,43 +300,43 @@ onMounted(() => {
 
 .retry-btn:hover, .back-home-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(99, 102, 241, 0.3);
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.3);
 }
 
 .poll-container {
   background: rgba(255, 255, 255, 0.02);
-  backdrop-filter: blur(20px);
+  backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 24px;
-  padding: 2.5rem;
-  max-width: 800px;
+  border-radius: 16px;
+  padding: 2rem;
+  max-width: 700px;
   width: 100%;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
 }
 
 .poll-header {
   text-align: center;
-  margin-bottom: 2rem;
-  padding-bottom: 1.5rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .poll-question {
-  font-size: 1.8rem;
-  font-weight: 700;
-  margin-bottom: 1rem;
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
   background: linear-gradient(135deg, #ffffff 0%, #e5e7eb 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  line-height: 1.2;
+  line-height: 1.3;
 }
 
 .poll-meta {
   display: flex;
   justify-content: center;
-  gap: 2rem;
-  font-size: 0.9rem;
+  gap: 1.5rem;
+  font-size: 0.85rem;
   color: #9ca3af;
 }
 
@@ -337,26 +346,28 @@ onMounted(() => {
   gap: 1rem;
   background: rgba(16, 185, 129, 0.1);
   border: 1px solid rgba(16, 185, 129, 0.3);
-  border-radius: 16px;
-  padding: 1.5rem;
-  margin-bottom: 2rem;
-  animation: slideIn 0.5s ease-out;
+  border-radius: 12px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  animation: slideIn 0.4s ease-out;
 }
 
 .success-icon {
-  font-size: 2rem;
+  font-size: 1.5rem;
   flex-shrink: 0;
 }
 
 .success-content h4 {
   color: #10b981;
-  margin: 0 0 0.5rem 0;
+  margin: 0 0 0.25rem 0;
   font-weight: 600;
+  font-size: 1rem;
 }
 
 .success-content p {
   color: #6ee7b7;
   margin: 0;
+  font-size: 0.9rem;
 }
 
 .login-prompt {
@@ -365,25 +376,27 @@ onMounted(() => {
   gap: 1rem;
   background: rgba(59, 130, 246, 0.1);
   border: 1px solid rgba(59, 130, 246, 0.3);
-  border-radius: 16px;
-  padding: 1.5rem;
-  margin-bottom: 2rem;
+  border-radius: 12px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
 }
 
 .login-icon {
-  font-size: 2rem;
+  font-size: 1.5rem;
   flex-shrink: 0;
 }
 
 .login-content h4 {
   color: #60a5fa;
-  margin: 0 0 0.5rem 0;
+  margin: 0 0 0.25rem 0;
   font-weight: 600;
+  font-size: 1rem;
 }
 
 .login-content p {
   color: #93c5fd;
   margin: 0;
+  font-size: 0.9rem;
 }
 
 .login-link {
@@ -391,7 +404,7 @@ onMounted(() => {
   text-decoration: none;
   font-weight: 600;
   padding: 0.25rem 0.5rem;
-  border-radius: 6px;
+  border-radius: 4px;
   transition: all 0.2s ease;
 }
 
@@ -400,21 +413,21 @@ onMounted(() => {
 }
 
 .voting-section {
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
 }
 
 .options {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-  margin-bottom: 2rem;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
 }
 
 .option {
   background: rgba(255, 255, 255, 0.03);
-  border: 2px solid rgba(255, 255, 255, 0.1);
-  border-radius: 16px;
-  padding: 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 1rem;
   transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
@@ -423,35 +436,49 @@ onMounted(() => {
 .option:hover:not(.disabled) {
   border-color: rgba(99, 102, 241, 0.5);
   background: rgba(99, 102, 241, 0.05);
-  transform: translateY(-2px);
+  transform: translateY(-1px);
 }
 
 .option.selected {
   border-color: #6366f1;
   background: rgba(99, 102, 241, 0.1);
-  box-shadow: 0 0 20px rgba(99, 102, 241, 0.3);
+  box-shadow: 0 0 15px rgba(99, 102, 241, 0.2);
 }
 
 .option.disabled {
-  opacity: 0.7;
+  opacity: 0.8;
   cursor: not-allowed;
+}
+
+.option.voted {
+  background: rgba(16, 185, 129, 0.05);
+  border-color: rgba(16, 185, 129, 0.3);
 }
 
 .option-content {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.75rem;
 }
 
 .option-input {
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  position: relative;
+}
+
+.voted-indicator {
+  position: absolute;
+  right: 0;
+  color: #10b981;
+  font-weight: bold;
+  font-size: 1.2rem;
 }
 
 .option-input input[type="radio"] {
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   border: 2px solid #6b7280;
   border-radius: 50%;
   appearance: none;
@@ -472,14 +499,14 @@ onMounted(() => {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
   background: white;
 }
 
 .option-label {
-  font-size: 1.1rem;
+  font-size: 1rem;
   font-weight: 500;
   color: #f3f4f6;
   cursor: pointer;
@@ -488,17 +515,17 @@ onMounted(() => {
 
 .progress-container {
   position: relative;
-  height: 3rem;
+  height: 2.5rem;
   background: rgba(0, 0, 0, 0.2);
-  border-radius: 12px;
+  border-radius: 8px;
   overflow: hidden;
 }
 
 .progress-bar {
   height: 100%;
   background: linear-gradient(90deg, #6366f1 0%, #8b5cf6 100%);
-  border-radius: 12px;
-  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 8px;
+  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
 }
@@ -530,38 +557,37 @@ onMounted(() => {
   align-items: center;
   color: white;
   font-weight: 600;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
   z-index: 1;
+  font-size: 0.9rem;
 }
 
 .vote-actions {
   display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  align-items: center;
+  justify-content: center;
 }
 
 .vote-btn {
   background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
   color: white;
   border: none;
-  border-radius: 16px;
-  padding: 1rem 2rem;
-  font-size: 1.1rem;
+  border-radius: 12px;
+  padding: 0.875rem 1.75rem;
+  font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  min-width: 200px;
+  min-width: 180px;
   justify-content: center;
-  box-shadow: 0 8px 20px rgba(99, 102, 241, 0.3);
+  box-shadow: 0 6px 16px rgba(99, 102, 241, 0.3);
 }
 
 .vote-btn:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 12px 30px rgba(99, 102, 241, 0.4);
+  box-shadow: 0 8px 24px rgba(99, 102, 241, 0.4);
 }
 
 .vote-btn:disabled {
@@ -570,26 +596,9 @@ onMounted(() => {
   transform: none;
 }
 
-.vote-btn.voted {
-  background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
-  box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
-}
-
-.vote-status {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  color: #10b981;
-  font-weight: 500;
-  background: rgba(16, 185, 129, 0.1);
-  padding: 0.5rem 1rem;
-  border-radius: 12px;
-  border: 1px solid rgba(16, 185, 129, 0.3);
-}
-
 .poll-footer {
   text-align: center;
-  padding-top: 1.5rem;
+  padding-top: 1rem;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
@@ -602,7 +611,8 @@ onMounted(() => {
   font-weight: 500;
   transition: all 0.2s ease;
   padding: 0.5rem 1rem;
-  border-radius: 8px;
+  border-radius: 6px;
+  font-size: 0.9rem;
 }
 
 .back-link:hover {
@@ -613,7 +623,7 @@ onMounted(() => {
 @keyframes slideIn {
   0% {
     opacity: 0;
-    transform: translateY(-20px);
+    transform: translateY(-10px);
   }
   100% {
     opacity: 1;
@@ -657,7 +667,7 @@ onMounted(() => {
   }
   
   .poll-question {
-    font-size: 1.4rem;
+    font-size: 1.3rem;
   }
   
   .poll-meta {
@@ -666,7 +676,7 @@ onMounted(() => {
   }
   
   .option {
-    padding: 1rem;
+    padding: 0.875rem;
   }
   
   .vote-btn {

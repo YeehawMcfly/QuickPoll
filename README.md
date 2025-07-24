@@ -1,38 +1,65 @@
 # QuickPoll – Real-Time Polling Application
 
-QuickPoll is a full-stack web application that lets users create custom polls, vote in real time, and view live results. Built with a modern Vue 3 + TypeScript frontend and a secure Node.js/Express + MongoDB backend, QuickPoll supports real-time updates via Socket.IO, user authentication with JWTs, and comprehensive testing using Jest. The project is fully containerized with Docker and orchestrated with Docker Compose, with continuous integration and deployment set up via GitHub Actions.
+QuickPoll is a full-stack web application that lets users create custom polls, vote in real time, and view live results. Built with a modern Vue 3 + TypeScript frontend and a secure Node.js/Express + MongoDB backend, QuickPoll supports real-time updates via Socket.IO, user authentication with JWTs, and comprehensive testing using Jest.
+
+**🚀 Live Demo:** [https://yeehawmcfly.github.io/QuickPoll/](https://yeehawmcfly.github.io/QuickPoll/)
+
+## Architecture & Deployment
+
+QuickPoll uses a modern cloud-native architecture with automated CI/CD:
+
+### Production Infrastructure
+- **Frontend:** Deployed on **GitHub Pages** with automatic builds via GitHub Actions
+- **Backend API:** Hosted on **Render** with auto-deploy from the main branch
+- **Database:** **MongoDB Atlas** cloud database with connection pooling
+- **Real-time:** Socket.IO connections for live poll updates across all clients
+
+### Deployment Pipeline
+1. **Code Push** → GitHub repository triggers automated workflows
+2. **Frontend Build** → GitHub Actions compiles Vue 3 app and deploys to GitHub Pages
+3. **Backend Deploy** → Render automatically builds and deploys the Express API
+4. **Database** → MongoDB Atlas handles data persistence with automatic backups
+
+### Environment Configuration
+- **Frontend:** Builds with production API endpoints pointing to Render backend
+- **Backend:** Configured with environment variables for MongoDB connection, JWT secrets, and CORS policies
+- **CORS Setup:** Properly configured to allow GitHub Pages → Render API communication
 
 ## Technologies
 
 **Frontend:**
 - Vue 3, TypeScript, Vite
-- Vue Router, Pinia
-- Socket.IO Client
+- Vue Router for SPA routing (with GitHub Pages compatibility)
+- Socket.IO Client for real-time updates
 - CSS custom properties, modern responsive design
 
 **Backend:**
 - Node.js, Express
-- MongoDB & Mongoose
-- JWT-based authentication
+- MongoDB Atlas & Mongoose ODM
+- JWT-based authentication with bcrypt password hashing
 - Socket.IO for real-time functionality
 
 **Testing:**
-- Jest (with ts-jest)
+- Jest (with ts-jest) for unit and integration tests
 - Supertest for API endpoint testing
+- Comprehensive test coverage for auth, voting, and race conditions
 
 **DevOps & Deployment:**
-- Docker & Docker Compose
-- Nginx (for serving the client)
-- GitHub Actions for CI/CD
+- GitHub Actions for automated CI/CD
+- Docker & Docker Compose for local development
+- Render for backend hosting
+- GitHub Pages for frontend hosting
 
 ## Features
 
-- **Real-Time Polling:** Users can create polls and vote while instantly seeing live updates.
-- **User Authentication:** Secure registration and login with JWTs, protecting sensitive endpoints.
-- **Dynamic Poll Management:** Create, update, and delete polls along with voting and real-time results.
-- **Responsive UI:** A modern, responsive frontend with smooth page transitions.
-- **Testing:** Robust unit and integration tests ensure backend reliability.
-- **Containerization & CI/CD:** Docker files for both client and server, with a GitHub Actions workflow that builds, tests, and pushes images to Docker Hub.
+- **Real-Time Polling:** Users can create polls and vote while instantly seeing live updates across all connected devices
+- **User Authentication:** Secure registration and login with JWTs, protecting poll creation and management endpoints
+- **Concurrent Voting:** Robust handling of race conditions when multiple users vote simultaneously
+- **Dynamic Poll Management:** Create, update, activate/deactivate, and delete polls with real-time synchronization
+- **Vote Tracking:** Prevents duplicate voting with both client-side and server-side validation
+- **Responsive UI:** Modern, responsive design with smooth animations and transitions
+- **Testing:** Comprehensive Jest and Supertest suites covering authentication, voting logic, and API endpoints
+- **Production Ready:** Full CI/CD pipeline with automated testing, building, and deployment
 
 ## Project Structure
 
@@ -40,100 +67,161 @@ QuickPoll is a full-stack web application that lets users create custom polls, v
 QuickPoll/
 ├── .github/
 │   └── workflows/
-│       └── ci-cd.yml         # GitHub Actions CI/CD configuration
-├── client/                   # Vue 3 + TypeScript frontend
-│   ├── Dockerfile            # Multi-stage Dockerfile for client build & Nginx serve
-│   ├── index.html
+│       ├── deploy-frontend.yml    # GitHub Pages deployment for Vue frontend
+│       └── test-backend.yml       # Automated testing for Express backend
+├── client/                        # Vue 3 + TypeScript frontend
+│   ├── 404.html                   # SPA routing support for GitHub Pages
+│   ├── Dockerfile                 # Multi-stage build for production
+│   ├── index.html                 # SPA entry point with GitHub Pages routing
 │   ├── package.json
-│   ├── src/
-│   │   ├── App.vue           # Main app layout with navigation, notifications, & footer
-│   │   ├── main.ts           # Entry point for Vue
-│   │   ├── router.ts         # Vue Router setup (SPA history mode)
-│   │   ├── style.css         # Global styles and CSS variables
-│   │   └── components/       # Reusable UI components (e.g. PollList, PollDetail, Login, Register, etc.)
-│   └── ...
-├── docker-compose.yml        # Orchestrates MongoDB, server, & client containers
-├── server/                   # Node.js/Express backend
-│   ├── Dockerfile            # Builds & runs the server app
-│   ├── package.json
-│   ├── tsconfig.json         # TypeScript compiler config for the server
+│   ├── vite.config.ts             # Vite config with GitHub Pages base path
 │   └── src/
-│       ├── index.ts          # Express app entry point and Socket.IO integration
-│       ├── config/
-│       │   └── db.ts         # MongoDB connection using Mongoose
-│       ├── middleware/
-│       │   └── auth.ts       # JWT authentication middleware
-│       ├── models/
-│       │   ├── pollModel.ts  # Mongoose schema for polls
-│       │   └── userModel.ts  # Mongoose schema for users (with password hashing & compare method)
-│       └── routes/
-│           ├── authRoutes.ts # Routes for user registration/login
-│           ├── pollRoutes.ts # Routes for creating, fetching, voting, and managing polls
-│           └── __tests__/    # Jest tests for models and API endpoints
-└── ...
+│       ├── App.vue                # Main layout with navigation and real-time notifications
+│       ├── main.ts                # Vue app initialization with router
+│       ├── router.ts              # Vue Router with SPA history mode
+│       ├── style.css              # Global design system and CSS variables
+│       ├── store/
+│       │   └── auth.ts            # Custom composable for authentication and vote tracking
+│       └── components/            # Vue components
+│           ├── PollList.vue       # Homepage with search and real-time updates
+│           ├── PollDetail.vue     # Voting interface with live results
+│           ├── CreatePoll.vue     # Poll creation form
+│           ├── Dashboard.vue      # User's polls management
+│           ├── Login.vue          # Authentication form
+│           └── Register.vue       # User registration
+├── docker-compose.yml             # Local development orchestration
+└── server/                        # Node.js/Express backend
+    ├── Dockerfile                 # Production container build
+    ├── jest.config.js             # Jest testing configuration
+    ├── package.json
+    ├── render.yaml                # Render deployment configuration
+    ├── tsconfig.json              # TypeScript compiler config
+    └── src/
+        ├── index.ts               # Express app with Socket.IO and CORS setup
+        ├── config/
+        │   └── db.ts              # MongoDB Atlas connection with Mongoose
+        ├── middleware/
+        │   └── auth.ts            # JWT authentication middleware
+        ├── models/
+        │   ├── pollModel.ts       # Poll schema with vote tracking and validation
+        │   ├── userModel.ts       # User schema with bcrypt password hashing
+        │   └── __tests__/         # Model unit tests
+        └── routes/
+            ├── authRoutes.ts      # Registration and login endpoints
+            ├── pollRoutes.ts      # CRUD operations and voting with Socket.IO
+            └── __tests__/         # API integration tests with Supertest
 ```
 
 ## Setup & Usage
+
+### Live Application
+Visit the live application at: **[https://yeehawmcfly.github.io/QuickPoll/](https://yeehawmcfly.github.io/QuickPoll/)**
+
+- Create an account or log in
+- Browse existing polls or create your own
+- Vote and watch results update in real-time
+- Manage your polls from the dashboard
 
 ### Local Development
 
 1. **Clone the repository:**
    ```sh
-   git clone https://github.com/yourusername/quickpoll.git
-   cd quickpoll
+   git clone https://github.com/yeehawmcfly/QuickPoll.git
+   cd QuickPoll
    ```
 
 2. **Server Setup:**
-   - Navigate to the `server/` directory.
-   - Install dependencies: `npm install`
-   - Create a `.env` file (if needed) with variables such as `JWT_SECRET` and `MONGODB_URI`.
-   - Start the server (in development mode): `npm run dev`
+   ```sh
+   cd server
+   npm install
+   # Create .env file with:
+   # MONGODB_URI=mongodb://127.0.0.1:27017/quickpoll
+   # JWT_SECRET=your-secret-key
+   # PORT=3000
+   npm run dev
+   ```
 
 3. **Client Setup:**
-   - Navigate to the `client/` directory.
-   - Install dependencies: `npm install`
-   - Start the development server: `npm run dev`
-   - The client runs on [http://localhost:5173](http://localhost:5173)
+   ```sh
+   cd client
+   npm install
+   npm run dev
+   # Runs on http://localhost:5173
+   ```
+
+4. **Docker Development:**
+   ```sh
+   docker-compose up --build
+   # Runs complete stack with MongoDB
+   ```
 
 ### Running Tests
 
-- From the `server/` directory, run:
-  ```sh
-  npm test
-  ```
-- This runs Jest tests (e.g., model tests in `server/src/models/__tests__/pollModel.test.ts` and route tests in `server/src/routes/__tests__/pollRoutes.test.ts`) and provides coverage reports with:
-  ```sh
-  npm run test:coverage
-  ```
+**Backend Testing:**
+```sh
+cd server
+npm test                    # Run all Jest tests
+npm run test:coverage      # Generate coverage report
+```
 
-### Docker & Deployment
+Tests cover:
+- Authentication flows and JWT validation
+- Poll CRUD operations and ownership verification
+- Voting logic and duplicate vote prevention
+- Race condition handling for concurrent votes
+- Socket.IO real-time event emission
 
-- **Build & Run Containers:**
-  ```sh
-  docker-compose up --build
-  ```
-  This command starts MongoDB, the server (on port 3000), and the client (on port 80).
+### Production Deployment
 
-- **CI/CD with GitHub Actions:**
-  The GitHub Actions workflow in `.github/workflows/ci-cd.yml` runs tests, builds the client, and then uses Docker Buildx to build and push both server and client images to Docker Hub (ensure your secrets are set).
+**Automatic Deployment:**
+- **Frontend:** Push to `main` branch → GitHub Actions builds and deploys to GitHub Pages
+- **Backend:** Push to `main` branch → Render automatically builds and deploys API
+
+**Manual Deployment:**
+```sh
+# Frontend to GitHub Pages
+cd client
+npm run build
+# Artifacts automatically deployed via GitHub Actions
+
+# Backend to Render
+# Render watches the repository and auto-deploys on push
+```
 
 ## Demo & Media Suggestions
 
-- **Video:** Record a screen capture demonstrating:
-  - The live creation of a poll and simultaneous voting in multiple browsers.
-  - Navigation through authentication flows (login/register) and how real-time vote updates occur.
-  - A terminal session showing `docker-compose up --build` and a GitHub Actions workflow run.
-- **Screenshots:**
-  - Before and after images of the authentication forms (centered input fields).
-  - MongoDB Compass or a terminal screenshot of `db.polls.find()` showing stored poll documents.
-  - API test results with Jest (a snippet of the coverage report).
+- **Live Demo:** Open [the application](https://yeehawmcfly.github.io/QuickPoll/) in multiple browser tabs to see real-time voting
+- **Video Demo:** Record creating a poll and watching votes update simultaneously across different devices
+- **Technical Demo:** Show the GitHub Actions workflow running and Render deployment logs
+- **Database:** MongoDB Atlas dashboard showing poll documents and vote counts
+
+## Architecture Highlights
+
+**Real-Time Synchronization:**
+- Socket.IO maintains persistent connections between clients and server
+- Vote updates broadcast instantly to all connected users
+- Poll creation/deletion events synchronized across sessions
+
+**Security & Authentication:**
+- JWT tokens for stateless authentication
+- Password hashing with bcrypt
+- Protected routes for poll management
+- CORS configured for cross-origin requests
+
+**Scalability:**
+- MongoDB Atlas handles database scaling automatically
+- Render provides container orchestration and auto-scaling
+- GitHub Pages CDN ensures fast global content delivery
+- Stateless backend design supports horizontal scaling
 
 ## Future Improvements
 
-- Enhance user analytics and poll result charts.
-- Optimize performance for large-scale polling.
-- Add social media sharing and notifications.
-- Implement advanced security measures and refine error handling.
+- **Enhanced Analytics:** Detailed voting statistics and poll performance metrics
+- **Advanced Visualizations:** Charts and graphs for poll results
+- **Social Features:** Poll sharing, comments, and social media integration
+- **Mobile App:** React Native or Flutter mobile application
+- **Enterprise Features:** Team polls, organization management, and advanced permissions
+- **Performance:** Caching layer with Redis for high-traffic scenarios
 
 ## License
 
@@ -141,4 +229,4 @@ This project is open-source and available under the MIT License.
 
 ---
 
-Feel free to update any sections as your project evolves or new features are added.
+**Built with ❤️ for real-time collaboration**
